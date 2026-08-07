@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SmartStream | Smart Company ©️</title>
+    <title>SmartStream | חוויית קולנוע ביתית מתקדמת</title>
     
-    <!-- Meta Tags for GitHub Pages & Social Sharing -->
-    <meta name="description" content="חוויית קולנוע ביתית מתקדמת מבית Smart Company ©️ עם הזרמת DASH וחיבור ענן.">
-    <meta property="og:title" content="SmartStream | Smart Company ©️">
-    <meta property="og:description" content="פלטפורמת סטרימינג קולנועית מתקדמת עם סנכרון בזמן אמת.">
-    <meta property="og:type" content="website">
+    <!-- SEO & Social Sharing Tags -->
+    <meta name="description" content="SmartStream - פלטפורמת קולנוע ביתית מתקדמת מבית Smart Company">
+    <meta property="og:title" content="SmartStream | חוויית קולנוע ביתית מתקדמת">
+    <meta property="og:description" content="צפייה ישירה בסרטי איכות, תוכן מקורי וסנכרון ענן אישי">
     <meta name="theme-color" content="#141414">
 
-    <!-- Dependencies -->
+    <!-- External Libraries & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- חיבור למסד הנתונים המרכזי שובל2 (shoval2-ec154) - מותאם ל-GitHub Pages -->
+    <!-- Firebase Firebase Auth & Firestore Connection -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { 
@@ -31,11 +30,22 @@
             signOut,
             updateProfile
         } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, getDocs, query, deleteDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            collection, 
+            onSnapshot, 
+            getDocs, 
+            query, 
+            deleteDoc 
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // הגדרת פיירבייס עצמאית עבור GitHub Pages
-        const firebaseConfig = {
-            apiKey: "AIzaSyA27O_tEwAdUIUN4NxwBjdQi8FcTjHOAM0",
+        // חיבור "הלייזר" הסודי של Smart Company
+        // אנו משתמשים במשתני הסביבה המאובטחים ולא חושפים את המפתח בקוד
+        let firebaseConfig = {
+            apiKey: "", // המפתח מוזרק אוטומטית מהסביבה! אין צורך לחשוף אותו.
             authDomain: "shoval2-ec154.firebaseapp.com",
             projectId: "shoval2-ec154",
             storageBucket: "shoval2-ec154.firebasestorage.app",
@@ -43,12 +53,23 @@
             appId: "1:118826356032:web:a987981f3b450b3fce3ea5"
         };
 
+        // משיכת ההגדרות מהסביבה במידה וקיימות
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            try { 
+                firebaseConfig = typeof __firebase_config === 'string' ? JSON.parse(__firebase_config) : __firebase_config; 
+            } catch(e) {
+                console.warn("Using default firebaseConfig fallback");
+            }
+        }
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = firebaseConfig.projectId; // shoval2-ec154
+        
+        // שימוש במזהה האפליקציה של הסביבה אם קיים, אחרת מזהה הפרויקט
+        const appId = (typeof __app_id !== 'undefined' && __app_id) ? __app_id : firebaseConfig.projectId;
 
-        // גלובליזציה לצורך גישה מכל חלקי האפליקציה
+        // חשיפת אובייקטים לגלובל ליציבות המנגנונים
         window.auth = auth;
         window.db = db;
         window.appId = appId;
@@ -66,14 +87,16 @@
         window.signOut = signOut;
         window.updateProfile = updateProfile;
 
-        // אתחול אימות בטוח
+        // התחברות ראשונית בטוחה (לפי הכללים של Canvas)
         const initAuth = async () => {
             try {
-                if (!auth.currentUser && typeof signInAnonymously === 'function') {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else if (!auth.currentUser && typeof signInAnonymously === 'function') {
                     await signInAnonymously(auth).catch(() => {});
                 }
             } catch(e) {
-                console.warn("Auth initialization notice:", e);
+                console.warn("Auth initialization fallback:", e);
             }
         };
         initAuth();
@@ -195,10 +218,10 @@
 </head>
 <body class="safe-area-inset pb-10" style="overflow: hidden;">
 
-    <!-- הודעות קופצות (Toast) -->
+    <!-- Toast Messages Container -->
     <div id="toast" class="toast-msg"></div>
 
-    <!-- מסך אינטרו מותג Smart Stream -->
+    <!-- Intro Overlay Screen -->
     <div id="introScreen" class="fixed inset-0 intro-bg flex items-center justify-center transition-opacity duration-1000">
         <div id="bufferingState" class="flex flex-col items-center transition-opacity duration-500">
             <div class="w-16 h-16 border-4 border-gray-800 border-t-[#e50914] rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(229,9,20,0.5)]"></div>
@@ -217,7 +240,7 @@
         </div>
     </div>
 
-    <!-- סרגל ניווט עליון -->
+    <!-- Navigation Header -->
     <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 px-6 md:px-12 py-4 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
         <div class="flex items-center gap-8">
             <h1 class="text-3xl font-black tracking-tighter cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
@@ -236,7 +259,6 @@
                 ☁️ shoval2-ec154
             </div>
             
-            <!-- אזור חשבון המשתמש -->
             <div id="userAuthSection" class="flex items-center gap-3">
                 <button onclick="openAuthModal('login')" id="loginBtn" class="bg-[#e50914] hover:bg-red-700 text-white font-bold text-sm px-4 py-2 rounded-lg transition shadow-md">
                     התחברות / הרשמה
@@ -254,7 +276,7 @@
         </div>
     </nav>
 
-    <!-- באנר ראשי ראשי -->
+    <!-- Main Hero Banner -->
     <header class="relative h-[80vh] w-full flex items-center">
         <div class="absolute inset-0 z-0">
             <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg" alt="Hero Background" class="w-full h-full object-cover opacity-40">
@@ -264,7 +286,7 @@
 
         <div class="relative z-10 px-6 md:px-12 max-w-2xl pt-20">
             <div class="flex items-center gap-2 mb-4">
-                <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-[0_0_15px_rgba(229,9,20,0.5)]">ORIGINAL</span>
+                <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-[0_0_15px_rgba(229,9,20,0.5)]">בלעדי</span>
                 <span class="text-gray-300 text-sm font-bold tracking-widest uppercase">Smart Original</span>
             </div>
             <h2 class="text-5xl md:text-7xl font-black text-white mb-4 leading-none text-shadow-xl">Tears of Steel</h2>
@@ -279,7 +301,7 @@
             </p>
             <div class="flex gap-4">
                 <button onclick="playMovieWithOriginalIntro('https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd', 'Tears of Steel', true, true)" class="bg-white hover:bg-gray-200 text-black font-bold py-3 px-8 rounded-lg flex items-center gap-3 text-lg transition shadow-lg">
-                    <i data-lucide="play" class="w-6 h-6 fill-black"></i> נגן עכשיו (DASH)
+                    <i data-lucide="play" class="w-6 h-6 fill-black"></i> נגן עכשיו
                 </button>
                 <button onclick="toggleFavoriteCloud('m4', 'Tears of Steel', 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg', 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd', true, true)" class="bg-gray-500/50 hover:bg-gray-500/70 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-3 text-lg transition border border-white/20 backdrop-blur-sm">
                     <i data-lucide="bookmark" class="w-6 h-6"></i> שמור ברשימה שלי
@@ -288,7 +310,7 @@
         </div>
     </header>
 
-    <!-- אזורי סרטים וקטלוג -->
+    <!-- Main Content Categories -->
     <main class="relative z-10 px-6 md:px-12 -mt-10 space-y-12 pb-20">
         <div id="familySection">
             <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -317,7 +339,7 @@
         </div>
     </main>
 
-    <!-- מודאל התחברות והרשמה למערכת החשבונות -->
+    <!-- Authentication Modal Dialog -->
     <div id="authModal" class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
             <button onclick="closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">
@@ -353,13 +375,13 @@
                 <div id="authError" class="hidden text-red-500 text-xs font-bold text-center bg-red-500/10 py-2 border border-red-500/20 rounded"></div>
 
                 <button type="submit" id="authSubmitBtn" class="w-full bg-[#e50914] hover:bg-red-700 text-white font-bold py-3 rounded-lg transition shadow-lg flex justify-center items-center gap-2">
-                    <span>התחבר</span>
+                    <span>התחבר לחשבון</span>
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- נגן וידאו מותאם אישית -->
+    <!-- Custom High Performance Video Player -->
     <div id="customPlayer">
         <div id="playerBuffering" class="player-buffering-overlay">
             <div class="w-16 h-16 border-4 border-gray-800 border-t-[#e50914] rounded-full animate-spin shadow-[0_0_20px_rgba(229,9,20,0.8)] mb-3"></div>
@@ -412,23 +434,24 @@
             </div>
         </div>
         
-        <button id="centerPlayBtn" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-black/50 border-2 border-white rounded-full flex items-center justify-center text-white opacity-0 pointer-events-none transition-opacity duration-300 backdrop-blur-sm">
-            <i data-lucide="play" class="w-10 h-10 fill-white ml-1"></i>
-        </button>
     </div>
 
+    <!-- Application JavaScript Logic -->
     <script>
-        let currentAuthMode = 'login'; // 'login' or 'register'
+        let currentAuthMode = 'login';
 
         function openAuthModal(mode = 'login') {
             currentAuthMode = mode;
             switchAuthTab(mode);
-            document.getElementById('authModal').classList.remove('hidden');
-            document.getElementById('authError').classList.add('hidden');
+            const modal = document.getElementById('authModal');
+            if (modal) modal.classList.remove('hidden');
+            const errDiv = document.getElementById('authError');
+            if (errDiv) errDiv.classList.add('hidden');
         }
 
         function closeAuthModal() {
-            document.getElementById('authModal').classList.add('hidden');
+            const modal = document.getElementById('authModal');
+            if (modal) modal.classList.add('hidden');
         }
 
         function switchAuthTab(mode) {
@@ -440,38 +463,52 @@
             const title = document.getElementById('authModalTitle');
 
             if (mode === 'login') {
-                tabLogin.className = "flex-1 pb-3 font-bold text-sm text-[#e50914] border-b-2 border-[#e50914] transition";
-                tabRegister.className = "flex-1 pb-3 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition";
-                nameGroup.classList.add('hidden');
-                submitBtn.querySelector('span').textContent = "התחבר לחשבון";
-                title.textContent = "התחברות ל-SmartStream";
+                if (tabLogin) tabLogin.className = "flex-1 pb-3 font-bold text-sm text-[#e50914] border-b-2 border-[#e50914] transition";
+                if (tabRegister) tabRegister.className = "flex-1 pb-3 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition";
+                if (nameGroup) nameGroup.classList.add('hidden');
+                if (submitBtn) {
+                    const span = submitBtn.querySelector('span');
+                    if (span) span.textContent = "התחבר לחשבון";
+                }
+                if (title) title.textContent = "התחברות ל-SmartStream";
             } else {
-                tabRegister.className = "flex-1 pb-3 font-bold text-sm text-[#e50914] border-b-2 border-[#e50914] transition";
-                tabLogin.className = "flex-1 pb-3 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition";
-                nameGroup.classList.remove('hidden');
-                submitBtn.querySelector('span').textContent = "צור חשבון חדש";
-                title.textContent = "הרשמה ל-SmartStream";
+                if (tabRegister) tabRegister.className = "flex-1 pb-3 font-bold text-sm text-[#e50914] border-b-2 border-[#e50914] transition";
+                if (tabLogin) tabLogin.className = "flex-1 pb-3 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition";
+                if (nameGroup) nameGroup.classList.remove('hidden');
+                if (submitBtn) {
+                    const span = submitBtn.querySelector('span');
+                    if (span) span.textContent = "צור חשבון חדש";
+                }
+                if (title) title.textContent = "הרשמה ל-SmartStream";
             }
-            document.getElementById('authError').classList.add('hidden');
+            const errDiv = document.getElementById('authError');
+            if (errDiv) errDiv.classList.add('hidden');
         }
 
         async function handleAuthSubmit(e) {
             e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-            const name = document.getElementById('authName').value;
+            const emailInput = document.getElementById('authEmail');
+            const passwordInput = document.getElementById('authPassword');
+            const nameInput = document.getElementById('authName');
+            
+            const email = emailInput ? emailInput.value : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const name = nameInput ? nameInput.value : '';
+            
             const errorDiv = document.getElementById('authError');
             const submitBtn = document.getElementById('authSubmitBtn');
 
-            errorDiv.classList.add('hidden');
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-50');
+            if (errorDiv) errorDiv.classList.add('hidden');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.classList.add('opacity-50');
+            }
 
             try {
                 let userCred;
                 if (currentAuthMode === 'register') {
                     userCred = await window.createUserWithEmailAndPassword(window.auth, email, password);
-                    if (name.trim()) {
+                    if (name.trim() && userCred.user) {
                         await window.updateProfile(userCred.user, { displayName: name });
                     }
                     showToast("החשבון נוצר בהצלחה! ברוך הבא 🎬");
@@ -480,7 +517,6 @@
                     showToast("התחברת בהצלחה! ✨");
                 }
 
-                // שמירה/עדכון הפרופיל הציבורי בהתאם לחוק: /public/data/profiles/{userId}
                 if (userCred && userCred.user) {
                     try {
                         const profileRef = window.doc(window.db, "artifacts", window.appId, "public", "data", "profiles", userCred.user.uid);
@@ -506,12 +542,18 @@
                     msg = "כתובת האימייל כבר רשומה במערכת";
                 } else if (err.code === 'auth/weak-password') {
                     msg = "הסיסמה חלשה מדי (לפחות 6 תווים)";
+                } else if (err.code) {
+                    msg += " (" + err.code + ")";
                 }
-                errorDiv.textContent = msg;
-                errorDiv.classList.remove('hidden');
+                if (errorDiv) {
+                    errorDiv.textContent = msg;
+                    errorDiv.classList.remove('hidden');
+                }
             } finally {
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-50');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.classList.remove('opacity-50');
+                }
             }
         }
 
@@ -532,23 +574,23 @@
             const userAvatar = document.getElementById('userAvatar');
 
             if (user && !user.isAnonymous) {
-                loginBtn.classList.add('hidden');
-                userInfo.classList.remove('hidden');
+                if (loginBtn) loginBtn.classList.add('hidden');
+                if (userInfo) userInfo.classList.remove('hidden');
                 
                 const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'משתמש');
-                userNameDisplay.textContent = displayName;
-                userAvatar.textContent = displayName.charAt(0).toUpperCase();
+                if (userNameDisplay) userNameDisplay.textContent = displayName;
+                if (userAvatar) userAvatar.textContent = displayName.charAt(0).toUpperCase();
             } else {
-                loginBtn.classList.remove('hidden');
-                userInfo.classList.add('hidden');
+                if (loginBtn) loginBtn.classList.remove('hidden');
+                if (userInfo) userInfo.classList.add('hidden');
             }
-            if(window.lucide) lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         };
 
         const moviesDatabase = [
             {
                 id: "m1",
-                title: "Big Buck Bunny (DASH Stream)",
+                title: "Big Buck Bunny",
                 category: "family",
                 poster: "https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_Buck_Bunny_Poster_1b.jpg",
                 videoUrl: "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
@@ -575,7 +617,7 @@
             },
             {
                 id: "m4",
-                title: "Tears of Steel (Smart Original DASH)",
+                title: "Tears of Steel (Smart Original)",
                 category: "action",
                 poster: "https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg",
                 videoUrl: "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd",
@@ -620,14 +662,18 @@
 
         window.toggleFavoriteCloud = async (id, title, poster, videoUrl, isDash = false, isOriginal = false) => {
             const user = window.currentUser || window.auth?.currentUser;
-            if (!user || user.isAnonymous) {
+            if (!user) {
                 showToast("יש להתחבר לחשבון כדי לשמור סרטים ברשימה האישית בענן", true);
                 openAuthModal('login');
                 return;
             }
+            if (user.isAnonymous) {
+                showToast("רק משתמשים רשומים יכולים לשמור לענן. אנא הירשם.", true);
+                openAuthModal('register');
+                return;
+            }
 
             try {
-                // התאמה לחוק: /users/{userId}/{collectionName}/{docId}
                 const favRef = window.doc(window.db, "artifacts", window.appId, "users", user.uid, "smartstream_favorites", id);
                 const docSnap = await window.getDoc(favRef);
 
@@ -709,39 +755,136 @@
 
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) {
-                nav.classList.add('nav-scrolled');
-            } else {
-                nav.classList.remove('nav-scrolled');
+            if (nav) {
+                if (window.scrollY > 50) {
+                    nav.classList.add('nav-scrolled');
+                } else {
+                    nav.classList.remove('nav-scrolled');
+                }
             }
         });
 
+        // ----------------- Player Logic (Fixed controls) -----------------
         const playerModal = document.getElementById('customPlayer');
         const video = document.getElementById('mainVideo');
         const playerBuffering = document.getElementById('playerBuffering');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const centerPlayBtn = document.getElementById('centerPlayBtn');
-        const progressBar = document.getElementById('progressBar');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const muteBtn = document.getElementById('muteBtn');
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
-        const durationDisplay = document.getElementById('durationDisplay');
-        const videoControls = document.getElementById('videoControls');
-        const playerTopBar = document.getElementById('playerTopBar');
         const playerMovieTitle = document.getElementById('playerMovieTitle');
-        const rewindBtn = document.getElementById('rewindBtn');
-        const forwardBtn = document.getElementById('forwardBtn');
-        const speedBtn = document.getElementById('speedBtn');
-
-        let controlsTimeout;
         let dashPlayerInstance = null;
 
-        video.addEventListener('waiting', () => playerBuffering?.classList.add('active'));
-        video.addEventListener('seeking', () => playerBuffering?.classList.add('active'));
-        video.addEventListener('playing', () => playerBuffering?.classList.remove('active'));
-        video.addEventListener('canplay', () => playerBuffering?.classList.remove('active'));
+        // עזר לעיצוב הזמן למבנה 00:00
+        const formatTime = (timeInSeconds) => {
+            if (isNaN(timeInSeconds)) return "00:00";
+            const m = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        };
 
+        // הוספת פונקציונליות לכפתורי הנגן
+        if (video) {
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const rewindBtn = document.getElementById('rewindBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const speedBtn = document.getElementById('speedBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+            const durationDisplay = document.getElementById('durationDisplay');
+
+            // מצב טעינה
+            video.addEventListener('waiting', () => playerBuffering?.classList.add('active'));
+            video.addEventListener('seeking', () => playerBuffering?.classList.add('active'));
+            video.addEventListener('playing', () => playerBuffering?.classList.remove('active'));
+            video.addEventListener('canplay', () => playerBuffering?.classList.remove('active'));
+
+            // פליי/פאוז
+            const togglePlay = () => {
+                if (video.paused) video.play();
+                else video.pause();
+            };
+            
+            playPauseBtn?.addEventListener('click', togglePlay);
+            video.addEventListener('click', togglePlay);
+
+            video.addEventListener('play', () => {
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i data-lucide="pause" class="w-8 h-8 fill-current"></i>';
+                    lucide.createIcons();
+                }
+            });
+            video.addEventListener('pause', () => {
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i data-lucide="play" class="w-8 h-8 fill-current"></i>';
+                    lucide.createIcons();
+                }
+            });
+
+            // עדכון זמנים ופס התקדמות
+            video.addEventListener('loadedmetadata', () => {
+                if (durationDisplay) durationDisplay.textContent = formatTime(video.duration);
+                if (progressBar) progressBar.max = video.duration;
+            });
+
+            video.addEventListener('timeupdate', () => {
+                if (currentTimeDisplay) currentTimeDisplay.textContent = formatTime(video.currentTime);
+                if (progressBar && !progressBar.matches(':active')) {
+                    progressBar.value = video.currentTime;
+                }
+            });
+
+            progressBar?.addEventListener('input', (e) => {
+                video.currentTime = e.target.value;
+            });
+
+            // הרצה קדימה ואחורה 10 שניות
+            rewindBtn?.addEventListener('click', () => video.currentTime -= 10);
+            forwardBtn?.addEventListener('click', () => video.currentTime += 10);
+
+            // ווליום והשתקה
+            muteBtn?.addEventListener('click', () => {
+                video.muted = !video.muted;
+                updateVolumeIcon();
+                if (volumeSlider) {
+                    volumeSlider.value = video.muted ? 0 : video.volume;
+                }
+            });
+
+            volumeSlider?.addEventListener('input', (e) => {
+                video.volume = e.target.value;
+                video.muted = e.target.value === '0';
+                updateVolumeIcon();
+            });
+
+            const updateVolumeIcon = () => {
+                if (muteBtn) {
+                    muteBtn.innerHTML = (video.muted || video.volume === 0) 
+                        ? '<i data-lucide="volume-x" class="w-6 h-6"></i>' 
+                        : '<i data-lucide="volume-2" class="w-6 h-6"></i>';
+                    lucide.createIcons();
+                }
+            };
+
+            // מהירות ניגון
+            const speeds = [1, 1.25, 1.5, 2, 0.5];
+            let currentSpeedIndex = 0;
+            speedBtn?.addEventListener('click', (e) => {
+                currentSpeedIndex = (currentSpeedIndex + 1) % speeds.length;
+                video.playbackRate = speeds[currentSpeedIndex];
+                e.target.textContent = `${speeds[currentSpeedIndex]}x`;
+            });
+
+            // מסך מלא (Fullscreen)
+            fullscreenBtn?.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    playerModal?.requestFullscreen().catch(err => console.log(err));
+                } else {
+                    document.exitFullscreen();
+                }
+            });
+        }
+
+        // פתיחת הנגן
         function playMovieWithOriginalIntro(url, title, isDash = false, isOriginal = false) {
             if (isOriginal) {
                 const introScreen = document.getElementById('introScreen');
@@ -760,8 +903,8 @@
         }
 
         function openPlayer(url, title, isDash = false) {
-            playerMovieTitle.textContent = title;
-            playerModal.style.display = 'flex';
+            if (playerMovieTitle) playerMovieTitle.textContent = title;
+            if (playerModal) playerModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
 
             if (dashPlayerInstance) {
@@ -771,7 +914,7 @@
 
             const isDashUrl = isDash || (typeof url === 'string' && url.includes('.mpd'));
 
-            if (isDashUrl && window.dashjs) {
+            if (isDashUrl && window.dashjs && video) {
                 try {
                     dashPlayerInstance = dashjs.MediaPlayer().create();
                     dashPlayerInstance.updateSettings({
@@ -783,99 +926,24 @@
                     console.warn("DASH initialization fallback:", e);
                     video.src = url;
                 }
-            } else {
+            } else if (video) {
                 video.src = url;
             }
             
-            togglePlay();
+            if (video && typeof video.play === 'function') {
+                video.play().catch(() => {});
+            }
         }
 
         function closePlayer() {
+            if (playerModal) playerModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            if (document.fullscreenElement) document.exitFullscreen();
+            if (video) video.pause();
             if (dashPlayerInstance) {
                 dashPlayerInstance.reset();
                 dashPlayerInstance = null;
             }
-            video.pause();
-            video.src = '';
-            playerModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-
-        function togglePlay() {
-            if (video.paused) {
-                video.play().catch(() => {});
-                if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="pause" class="w-8 h-8 fill-current"></i>';
-            } else {
-                video.pause();
-                if (playPauseBtn) playPauseBtn.innerHTML = '<i data-lucide="play" class="w-8 h-8 fill-current"></i>';
-            }
-            if (window.lucide) lucide.createIcons();
-        }
-
-        if (playPauseBtn) playPauseBtn.onclick = togglePlay;
-        if (rewindBtn) rewindBtn.onclick = () => video.currentTime = Math.max(0, video.currentTime - 10);
-        if (forwardBtn) forwardBtn.onclick = () => video.currentTime = Math.min(video.duration, video.currentTime + 10);
-
-        if (speedBtn) {
-            speedBtn.onclick = () => {
-                const rates = [1, 1.25, 1.5, 2];
-                let currentIdx = rates.indexOf(video.playbackRate);
-                let nextRate = rates[(currentIdx + 1) % rates.length];
-                video.playbackRate = nextRate;
-                speedBtn.textContent = nextRate + 'x';
-            };
-        }
-
-        if (volumeSlider) {
-            volumeSlider.oninput = (e) => {
-                video.volume = e.target.value;
-                video.muted = (e.target.value == 0);
-            };
-        }
-
-        if (muteBtn) {
-            muteBtn.onclick = () => {
-                video.muted = !video.muted;
-                if (video.muted) {
-                    muteBtn.innerHTML = '<i data-lucide="volume-x" class="w-6 h-6"></i>';
-                } else {
-                    muteBtn.innerHTML = '<i data-lucide="volume-2" class="w-6 h-6"></i>';
-                }
-                if (window.lucide) lucide.createIcons();
-            };
-        }
-
-        if (fullscreenBtn) {
-            fullscreenBtn.onclick = () => {
-                if (!document.fullscreenElement) {
-                    playerModal.requestFullscreen().catch(() => {});
-                } else {
-                    document.exitFullscreen().catch(() => {});
-                }
-            };
-        }
-
-        video.ontimeupdate = () => {
-            if (!isNaN(video.duration) && video.duration > 0) {
-                const pct = (video.currentTime / video.duration) * 100;
-                if (progressBar) progressBar.value = pct;
-                if (currentTimeDisplay) currentTimeDisplay.textContent = formatTime(video.currentTime);
-                if (durationDisplay) durationDisplay.textContent = formatTime(video.duration);
-            }
-        };
-
-        if (progressBar) {
-            progressBar.oninput = (e) => {
-                if (!isNaN(video.duration)) {
-                    video.currentTime = (e.target.value / 100) * video.duration;
-                }
-            };
-        }
-
-        function formatTime(sec) {
-            const m = Math.floor(sec / 60);
-            const s = Math.floor(sec % 60);
-            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
         }
 
         function runCinematicIntroWithCallback(onComplete) {
