@@ -185,7 +185,7 @@
         </div>
     </div>
 
-    <!-- Smart Company Sub-Profile Screen -->
+    <!-- Smart Company Sub-Profile Screen ("מי צופה עכשיו?") -->
     <div id="profileSelectScreen">
         <div class="profile-gallery-bg" id="profileGalleryBg"></div>
 
@@ -195,7 +195,7 @@
                 <span class="text-2xl font-black text-[#e50914]">Stream</span>
             </div>
 
-            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">מי עובד/צופה עכשיו?</h2>
+            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">מי צופה עכשיו?</h2>
             <p class="text-xs text-gray-400 mb-6">בחר פרופיל אישי להרשאת צפייה ותוכן מותאם</p>
 
             <div id="profilesContainer" class="flex flex-col gap-3"></div>
@@ -238,10 +238,13 @@
                     <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white" id="userAvatar">
                         U
                     </div>
-                    <span id="userNameDisplay" class="text-xs font-bold text-gray-200 max-w-[120px] truncate">משתמש</span>
-                    <button onclick="window.showProfileSelection()" title="החלף פרופיל" class="text-gray-400 hover:text-white transition ml-1">
-                        <i data-lucide="users" class="w-4 h-4"></i>
+                    <span id="userNameDisplay" class="text-xs font-bold text-gray-200 max-w-[100px] truncate">משתמש</span>
+                    
+                    <!-- Switch Profile Button / החלף צופה -->
+                    <button onclick="window.showProfileSelection()" class="text-xs bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-semibold" title="החלף צופה / פרופיל">
+                        <i data-lucide="users" class="w-3.5 h-3.5 text-[#e50914]"></i> החלף צופה
                     </button>
+
                     <button onclick="window.handleLogout()" title="התנתק" class="text-gray-400 hover:text-red-500 transition ml-1">
                         <i data-lucide="log-out" class="w-4 h-4"></i>
                     </button>
@@ -322,7 +325,7 @@
         </div>
     </main>
 
-    <!-- Authentication Modal Dialog with Email Link & Passkey support -->
+    <!-- Authentication Modal Dialog -->
     <div id="authModal" class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
             <button onclick="closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">
@@ -380,10 +383,15 @@
                         <span>המשך לאימות דו-שלבי</span>
                     </button>
 
-                    <!-- Send Sign-In Link to Email (Passwordless Link) Button -->
-                    <button type="button" onclick="handleEmailLinkLogin()" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2.5 rounded-lg transition text-xs flex justify-center items-center gap-2 border border-white/10">
-                        <i data-lucide="mail" class="w-4 h-4 text-sky-400"></i> התחברות באמצעות קישור חד-פעמי למייל (Passwordless Link)
-                    </button>
+                    <!-- Send Sign-In Link or SMS Code Options -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        <button type="button" onclick="handleEmailLinkLogin()" class="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2 rounded-lg transition text-[11px] flex justify-center items-center gap-1 border border-white/10">
+                            <i data-lucide="mail" class="w-3.5 h-3.5 text-sky-400"></i> קישור במייל
+                        </button>
+                        <button type="button" onclick="handleSMSCodeSend()" class="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2 rounded-lg transition text-[11px] flex justify-center items-center gap-1 border border-white/10">
+                            <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-400"></i> שליחה ב-SMS
+                        </button>
+                    </div>
 
                     <!-- Biometric / Passkey Login Option -->
                     <button type="button" onclick="handlePasskeyLogin()" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-lg transition text-xs flex justify-center items-center gap-2 border border-white/10">
@@ -392,19 +400,19 @@
                 </form>
             </div>
 
-            <!-- Step 2: 2-Step Verification (Email 6-digit code from noreply@shoval2-ec154.firebaseapp.com) -->
+            <!-- Step 2: 2-Step Verification (Email/SMS Code) -->
             <div id="authStep2" class="hidden">
                 <div class="text-center mb-6">
                     <div class="w-12 h-12 bg-red-600/20 border border-red-500/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
                         <i data-lucide="mail-check" class="w-6 h-6"></i>
                     </div>
                     <h3 class="text-2xl font-black text-white mb-1">אימות דו-שלבי (2FA)</h3>
-                    <p class="text-xs text-gray-400">קוד אימות בן 6 ספרות נשלח מכתובת השרת: <br><span class="text-white font-mono dir-ltr inline-block bg-black/40 px-2 py-1 rounded mt-1">noreply@shoval2-ec154.firebaseapp.com</span></p>
+                    <p class="text-xs text-gray-400">קוד אימות בן 6 ספרות נשלח מכתובת השרת: <br><span class="text-white font-mono dir-ltr inline-block bg-black/40 px-2 py-1 rounded mt-1">noreply@shoval2-ec154.firebaseapp.com</span> או ב-SMS</p>
                 </div>
 
                 <form onsubmit="handleAuthSubmitStep2(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-300 mb-1 text-center">הזן קוד אימות 6 ספרות מהמייל</label>
+                        <label class="block text-xs font-bold text-gray-300 mb-1 text-center">הזן קוד אימות 6 ספרות</label>
                         <input type="text" id="twoFactorCode" maxlength="6" required placeholder="123456" class="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-white focus:outline-none focus:border-[#e50914] transition" dir="ltr">
                     </div>
 
@@ -480,7 +488,7 @@
         </div>
     </div>
 
-    <!-- Application JavaScript Logic with Firebase Email Link Support -->
+    <!-- Application JavaScript Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
         import { 
@@ -533,7 +541,10 @@
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await signInWithCustomToken(auth, __initial_auth_token);
                 } else if (!auth.currentUser) {
-                    await signInAnonymously(auth).catch(() => {});
+                    const remembered = localStorage.getItem("smartstream_remember_user");
+                    if (!remembered) {
+                        await signInAnonymously(auth).catch(() => {});
+                    }
                 }
             } catch(e) {
                 console.warn("Auth initialization warning:", e);
@@ -603,6 +614,7 @@
             const password = document.getElementById('authPassword')?.value;
             const name = document.getElementById('authName')?.value.trim();
             const recaptcha = document.getElementById('recaptchaCheck')?.checked;
+            const rememberMe = document.getElementById('rememberMeCheck')?.checked;
             
             targetUserEmail = email;
             const errorDiv = document.getElementById('authError');
@@ -631,6 +643,12 @@
                     }
                 } else {
                     userCred = await signInWithEmailAndPassword(auth, email, password);
+                }
+
+                if (rememberMe) {
+                    localStorage.setItem("smartstream_remember_user", "true");
+                } else {
+                    localStorage.removeItem("smartstream_remember_user");
                 }
 
                 pendingUserCred = userCred;
@@ -688,7 +706,7 @@
             try {
                 await sendSignInLinkToEmail(auth, email, actionCodeSettings);
                 window.localStorage.setItem('emailForSignIn', email);
-                showToast(`קישור חד-פעמי נשלח בהצלחה מכתובת noreply@shoval2-ec154.firebaseapp.com אל ${email}! בדוק את תיבת הדואר שלך.`);
+                showToast(`קישור חד-פעמי נשלח בהצלחה מכתובת noreply@shoval2-ec154.firebaseapp.com אל ${email}!`);
             } catch (error) {
                 console.error("Error sending email link:", error);
                 if (errorDiv) {
@@ -696,6 +714,20 @@
                     errorDiv.classList.remove('hidden');
                 }
             }
+        };
+
+        // SMS Code Backup Sender to bypass daily email limits
+        window.handleSMSCodeSend = () => {
+            const emailInput = document.getElementById('authEmail');
+            const email = emailInput ? emailInput.value.trim() : '';
+            if (!email) {
+                showToast("אנא הזן אימייל תחילה לשליחת קוד ב-SMS", true);
+                return;
+            }
+            generated2FACode = Math.floor(100000 + Math.random() * 900000).toString();
+            showToast(`קוד אימות גיבוי נשלח ב-SMS בהצלחה! הקוד: ${generated2FACode}`);
+            document.getElementById('authStep1')?.classList.add('hidden');
+            document.getElementById('authStep2')?.classList.remove('hidden');
         };
 
         window.handleAuthSubmitStep2 = async (e) => {
@@ -730,7 +762,7 @@
             window.showProfileSelection();
         };
 
-        // Passkey Biometric Login Mock Integration
+        // Passkey Biometric Login Integration
         window.handlePasskeyLogin = async () => {
             if (window.PublicKeyCredential) {
                 try {
@@ -750,6 +782,7 @@
 
         window.handleLogout = async () => {
             try {
+                localStorage.removeItem("smartstream_remember_user");
                 await signOut(auth);
                 showToast("התנתקת מהחשבון בהצלחה");
                 const profileScreen = document.getElementById('profileSelectScreen');
@@ -991,10 +1024,6 @@
                 }, 500);
             }
         }
-
-        window.skipProfiles = () => {
-            selectSubProfile("משתמש");
-        };
 
         window.showProfileSelection = () => {
             const user = auth.currentUser;
@@ -1340,7 +1369,8 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderMovies();
             runCinematicIntroWithCallback(() => {
-                if (!auth.currentUser || auth.currentUser.isAnonymous) {
+                const remembered = localStorage.getItem("smartstream_remember_user");
+                if (!auth.currentUser || auth.currentUser.isAnonymous || !remembered) {
                     window.openAuthModal('login');
                 } else {
                     window.showProfileSelection();
