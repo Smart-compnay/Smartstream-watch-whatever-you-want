@@ -159,8 +159,73 @@
             to {
                 opacity: 1;
                 transform: translateY(0) scale(1);
-            }
         }
+    }
+    
+    /* סגנונות למסך בחירת פרופילים החדש */
+    #profileSelectionScreen {
+        background-color: #000;
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }
+    
+    .profile-sidebar {
+        background: linear-gradient(to right, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
+        backdrop-filter: blur(2px);
+    }
+    
+    .profile-item-tv {
+        transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        border: 3px solid transparent;
+        opacity: 0.7;
+    }
+    
+    .profile-item-tv:hover, .profile-item-tv:focus {
+        transform: scale(1.15) translateX(-10px);
+        border-color: white;
+        opacity: 1;
+        z-index: 10;
+        box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+    
+    .profile-item-tv .profile-name {
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.3s ease;
+    }
+    
+    .profile-item-tv:hover .profile-name, .profile-item-tv:focus .profile-name {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    
+    .tv-smile {
+        position: relative;
+    }
+    .tv-smile::before {
+        content: '';
+        position: absolute;
+        top: 35%;
+        left: 30%;
+        width: 8%;
+        height: 8%;
+        background-color: white;
+        border-radius: 50%;
+        box-shadow: 32px 0 0 0 white; /* העין השניה */
+    }
+    .tv-smile::after {
+        content: '';
+        position: absolute;
+        top: 60%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40%;
+        height: 20%;
+        border-bottom: 3px solid white;
+        border-radius: 50%;
+    }
+
     </style>
 </head>
 <body class="safe-area-inset pb-10" style="overflow: hidden;">
@@ -212,6 +277,65 @@
                     <button onclick="window.toggleAuthMode()" class="text-[#e50914] font-bold hover:underline">ירשם עכשיו</button>
                 </p>
             </div>
+        </div>
+    </div>
+
+    <!-- מסך בחירת פרופילים בסגנון טלוויזיה חכמה -->
+    <div id="profileSelectionScreen" class="fixed inset-0 z-[9992] hidden flex-row items-center transition-opacity duration-500 bg-black" style="background-image: url('https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg');">
+        <!-- שכבת גרדיאנט להכהות את הרקע בצד ימין (איפה שהסרגל) -->
+        <div class="absolute inset-0 bg-gradient-to-l from-black/80 via-black/40 to-black/10 z-0"></div>
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30 z-0"></div>
+
+        <!-- סרגל הפרופילים בצד ימין (RTL) -->
+        <div class="profile-sidebar relative z-10 h-full w-48 md:w-64 flex flex-col justify-center px-4 md:px-8 border-l border-white/5">
+            <div class="absolute top-12 right-6 md:right-8">
+                <h1 class="text-3xl font-black tracking-tighter text-white drop-shadow-lg mb-1">
+                    Smart<span class="text-[#e50914]">Stream</span>
+                </h1>
+                <p class="text-sm font-bold text-gray-300">בחר פרופיל</p>
+            </div>
+
+            <div class="flex flex-col gap-4 mt-20">
+                <!-- פרופיל 1 -->
+                <button class="profile-item-tv group flex items-center gap-4 bg-[#2f80ed] rounded shadow-lg p-1 cursor-pointer w-16 h-16 md:w-20 md:h-20 focus:outline-none" onclick="window.selectProfile('אבא', 'from-blue-600 to-blue-400')">
+                    <div class="w-full h-full tv-smile relative"></div>
+                    <span class="profile-name absolute right-[110%] text-white font-bold text-xl md:text-2xl whitespace-nowrap drop-shadow-md">אבא</span>
+                </button>
+
+                <!-- פרופיל 2 -->
+                <button class="profile-item-tv group flex items-center gap-4 bg-[#eb5757] rounded shadow-lg p-1 cursor-pointer w-16 h-16 md:w-20 md:h-20 focus:outline-none" onclick="window.selectProfile('אמא', 'from-pink-600 to-purple-400')">
+                    <div class="w-full h-full tv-smile relative"></div>
+                    <span class="profile-name absolute right-[110%] text-white font-bold text-xl md:text-2xl whitespace-nowrap drop-shadow-md">אמא</span>
+                </button>
+
+                <!-- פרופיל 3 -->
+                <button class="profile-item-tv group flex items-center gap-4 bg-[#27ae60] rounded shadow-lg p-1 cursor-pointer w-16 h-16 md:w-20 md:h-20 focus:outline-none" onclick="window.selectProfile('ילדים', 'from-green-500 to-emerald-300')">
+                    <div class="w-full h-full tv-smile relative"></div>
+                    <span class="profile-name absolute right-[110%] text-white font-bold text-xl md:text-2xl whitespace-nowrap drop-shadow-md">ילדים</span>
+                </button>
+                
+                <!-- פרופיל 4 (אורח) -->
+                <button class="profile-item-tv group flex items-center gap-4 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 rounded shadow-lg p-1 cursor-pointer w-16 h-16 md:w-20 md:h-20 focus:outline-none" onclick="window.selectProfile('אורח', 'from-gray-600 to-gray-400')">
+                     <div class="w-full h-full flex justify-center items-center">
+                        <span class="text-white font-bold text-lg md:text-xl">Kids</span>
+                    </div>
+                    <span class="profile-name absolute right-[110%] text-white font-bold text-xl md:text-2xl whitespace-nowrap drop-shadow-md">ילדים</span>
+                </button>
+                
+                <!-- כפתור ניהול (אייקון עיפרון) -->
+                <button class="profile-item-tv group flex items-center gap-4 bg-transparent border-2 border-dashed border-gray-400 rounded shadow-lg p-1 cursor-pointer w-16 h-16 md:w-20 md:h-20 mt-4 focus:outline-none hover:border-white">
+                     <div class="w-full h-full flex justify-center items-center text-gray-400 group-hover:text-white transition-colors">
+                        <i data-lucide="pencil" class="w-8 h-8"></i>
+                    </div>
+                    <span class="profile-name absolute right-[110%] text-gray-300 font-bold text-lg whitespace-nowrap drop-shadow-md">ניהול</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- תוכן או לוגו על הרקע (אופציונלי, כמו המיתוג של הסרט ברקע) -->
+        <div class="absolute bottom-12 left-12 z-10 flex flex-col items-end opacity-90 hidden md:flex">
+             <h2 class="text-6xl font-black text-white drop-shadow-2xl mb-2" style="font-family: serif;">TEARS OF STEEL</h2>
+             <p class="text-gray-300 font-bold text-lg tracking-widest drop-shadow-md">Sci-Fi • Action • Thriller</p>
         </div>
     </div>
 
@@ -293,9 +417,14 @@
         </div>
         
         <div class="flex items-center gap-4 text-white">
-            <div id="userInfo" class="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
-                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white" id="userAvatar">☁️</div>
-                <span id="userNameDisplay" class="text-xs font-bold text-gray-200">אורח מחובר</span>
+            <div id="userInfo" class="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full backdrop-blur-md">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white cursor-pointer hover:scale-110 transition-transform shadow-md" id="userAvatar" onclick="window.openProfileSelection()" title="החלף פרופיל">☁️</div>
+                <span id="userNameDisplay" class="text-xs font-bold text-gray-200 cursor-pointer hover:text-white transition" onclick="window.openProfileSelection()" title="החלף פרופיל">אורח מחובר</span>
+                
+                <button id="switchProfileBtn" onclick="window.openProfileSelection()" class="hidden text-xs text-gray-300 hover:text-white font-bold border-r border-white/20 pr-2 mr-1 flex items-center gap-1 transition" title="החלף פרופיל">
+                    <i data-lucide="users" class="w-3.5 h-3.5 text-[#e50914]"></i> החלף פרופיל
+                </button>
+
                 <button id="logoutBtn" onclick="window.handleLogout()" class="hidden text-xs text-red-400 hover:text-red-300 font-bold border-r border-white/20 pr-2 mr-1">התנתק</button>
             </div>
 
@@ -495,37 +624,37 @@
 
         const moviesCatalog = {
             'pd1': {
-                id: 'pd1', title: 'Night of the Living Dead', year: 1968, category: 'אימה קלאסי',
-                img: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Night_of_the_Living_Dead_%281968%29_poster.jpg',
-                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                id: 'pd1', title: 'סרט אימה קלאסי', year: 1968, category: 'אימה קלאסי',
+                img: './images/poster1.jpg', /* נתיב מקומי לתמונה */
+                video: './movies/movie1.mp4', /* נתיב מקומי לסרט */
                 isDash: false, director: 'George A. Romero', license: 'Public Domain',
                 synopsis: 'סרט האימה הקלאסי המכונן ששינה את ז׳אנר הזומבים לנצח.'
             },
             'f1': {
-                id: 'f1', title: 'Big Buck Bunny', year: 2008, category: 'אנימציה לכל המשפחה',
-                img: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg',
-                video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd',
-                isDash: true, director: 'Blender Institute', license: 'Creative Commons 3.0',
+                id: 'f1', title: 'באני הענק', year: 2008, category: 'אנימציה לכל המשפחה',
+                img: './images/poster2.jpg',
+                video: './movies/movie2.mp4',
+                isDash: false, director: 'Blender Institute', license: 'Creative Commons 3.0',
                 synopsis: 'סיפורו של שפן ענק וטוב לב שהחליט לנקום במציקנים ביער.'
             },
             'a1': {
-                id: 'a1', title: 'Tears of Steel', year: 2012, category: 'מדע בדיוני ואקשן',
-                img: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
-                video: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.mpd',
-                isDash: true, director: 'Ian Hubert / Blender Institute', license: 'Creative Commons 3.0',
+                id: 'a1', title: 'דמעות של פלדה', year: 2012, category: 'מדע בדיוני ואקשן',
+                img: './images/poster3.jpg',
+                video: './movies/movie3.mp4',
+                isDash: false, director: 'Ian Hubert / Blender Institute', license: 'Creative Commons 3.0',
                 synopsis: 'הרפתקת מדע בדיוני עתידנית מרהיבה בעיר אמסטרדם. קבוצת לוחמים מנסה להציל את העולם מרובוטים.'
             },
             'pd2': {
-                id: 'pd2', title: 'Charade', year: 1963, category: 'מתח ורומנטיקה',
-                img: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Charade_poster.jpg',
-                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                id: 'pd2', title: 'סרט מתח קלאסי', year: 1963, category: 'מתח ורומנטיקה',
+                img: './images/poster4.jpg',
+                video: './movies/movie4.mp4',
                 isDash: false, director: 'Stanley Donen', license: 'Public Domain',
                 synopsis: 'קלאסיקת מתח ובלש מעולה בכיכובם של אודרי הפבורן וקארי גרנט.'
             },
             'f2': {
-                id: 'f2', title: 'Sintel', year: 2010, category: 'הרפתקאות ואנימציה',
-                img: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg',
-                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                id: 'f2', title: 'המסע של סינטל', year: 2010, category: 'הרפתקאות ואנימציה',
+                img: './images/poster5.jpg',
+                video: './movies/movie5.mp4',
                 isDash: false, director: 'Colin Levy / Blender Foundation', license: 'Creative Commons 3.0',
                 synopsis: 'מסע מרגש של נערה צעירה המחפשת את דרקונה הקטן שנחטף.'
             }
@@ -540,26 +669,71 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
-                await signInAnonymously(auth);
+                // במקום התחברות אנונימית אוטומטית, נראה את מסך ההתחברות האמיתי
+                document.getElementById('introScreen').style.display = 'none';
+                window.openAuthModal();
             } else {
                 currentUser = user;
-                const userNameDisplay = document.getElementById('userNameDisplay');
-                const logoutBtn = document.getElementById('logoutBtn');
-                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
+                
+                // סגור את מודאל ההתחברות אם פתוח
+                window.closeAuthModal();
 
-                if (user.isAnonymous) {
-                    userNameDisplay.innerText = "אורח מחובר בענן";
-                    logoutBtn.classList.add('hidden');
-                    authBtnModalToggle.classList.remove('hidden');
-                } else {
-                    userNameDisplay.innerText = user.email;
-                    logoutBtn.classList.remove('hidden');
-                    authBtnModalToggle.classList.add('hidden');
-                }
-
-                await loadWatchProgressFromCloud();
+                // הצג את מסך בחירת הפרופילים במקום להיכנס ישר לאתר
+                document.getElementById('introScreen').style.display = 'none';
+                document.getElementById('profileSelectionScreen').classList.remove('hidden');
+                document.getElementById('profileSelectionScreen').style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // מניעת גלילה בזמן בחירת פרופיל
             }
         });
+
+        window.selectProfile = (profileName, gradientClasses) => {
+            // העלמת מסך הפרופילים
+            const profileScreen = document.getElementById('profileSelectionScreen');
+            profileScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                profileScreen.classList.add('hidden');
+                profileScreen.style.display = 'none';
+                document.body.style.overflow = 'auto'; // החזרת אפשרות הגלילה
+                
+                // עדכון ה-Navbar עם פרטי הפרופיל שנבחר
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                const userAvatar = document.getElementById('userAvatar');
+                const logoutBtn = document.getElementById('logoutBtn');
+                const switchProfileBtn = document.getElementById('switchProfileBtn');
+                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
+
+                userNameDisplay.innerText = profileName;
+                
+                // ניקוי מחלקות רקע קיימות מהאווטאר והשמת החדשות
+                userAvatar.className = `w-7 h-7 rounded-full bg-gradient-to-tr ${gradientClasses} flex items-center justify-center font-bold text-xs text-white cursor-pointer hover:scale-110 transition-transform shadow-md`;
+                userAvatar.innerText = profileName.charAt(0); // האות הראשונה של השם
+
+                logoutBtn.classList.remove('hidden');
+                if (switchProfileBtn) switchProfileBtn.classList.remove('hidden');
+                authBtnModalToggle.classList.add('hidden');
+
+                // טעינת היסטוריית צפייה
+                loadWatchProgressFromCloud();
+                
+                showToast(`ברוך הבא, ${profileName}! 🍿`);
+            }, 500);
+        };
+
+        window.openProfileSelection = () => {
+            if (document.getElementById('customPlayer').style.display === 'flex') {
+                window.closePlayer();
+            }
+            const profileScreen = document.getElementById('profileSelectionScreen');
+            profileScreen.classList.remove('hidden');
+            profileScreen.style.display = 'flex';
+            setTimeout(() => {
+                profileScreen.style.opacity = '1';
+            }, 10);
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+            showToast('בחר פרופיל לצפייה');
+        };
 
         window.openAuthModal = () => document.getElementById('authModal').classList.remove('hidden');
         window.closeAuthModal = () => document.getElementById('authModal').classList.add('hidden');
@@ -965,13 +1139,11 @@
                 const cssIntro = document.getElementById('cssIntroState');
                 cssIntro?.classList.remove('hidden');
                 setTimeout(() => cssIntro?.classList.remove('opacity-0', 'scale-[0.8]'), 50);
-                setTimeout(() => {
-                    document.getElementById('introScreen').style.display = 'none';
-                    document.body.style.overflow = 'auto';
-                }, 1500);
+                
+                // ההסרה של מסך הפתיחה קורית כעת בתוך onAuthStateChanged
+                // כדי שלא נראה את האתר המרכזי לפני בחירת הפרופיל
             }, 800);
         });
     </script>
 </body>
 </html>
-
