@@ -5,13 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SmartStream | פלטפורמת הקולנוע של Smart Company</title>
     
-    <!-- SEO & Social Sharing Tags -->
     <meta name="description" content="SmartStream - פלטפורמת קולנוע ביתית מתקדמת מבית Smart Company">
-    <meta property="og:title" content="SmartStream | חוויית קולנוע ביתית מתקדמת">
-    <meta property="og:description" content="צפייה ישירה בסרטי איכות, תוכן מקורי וסנכרון ענן אישי">
     <meta name="theme-color" content="#141414">
 
-    <!-- External Libraries & Fonts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
@@ -44,25 +40,52 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.8);
             z-index: 10;
         }
-        
-        .nav-scrolled {
-            background-color: #141414;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-        }
 
         #customPlayer {
             position: fixed; inset: 0; z-index: 9999; background: #000;
             display: none; flex-direction: column; justify-content: center;
+            transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        /* אפקט כיווץ הנגן (Bumper/PiP style) בסיום הסרט */
+        #customPlayer.pip-mode {
+            top: 24px;
+            right: 24px;
+            left: auto;
+            bottom: auto;
+            width: 360px;
+            height: 202px;
+            border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.95), 0 0 0 2px rgba(229, 9, 20, 0.8);
+            overflow: hidden;
+            z-index: 10000;
+        }
+
         video::-webkit-media-controls { display: none !important; }
-        video::cue { background: transparent; color: transparent; }
         
+        /* סגנון כתוביות מותאם אישית בנגן */
+        ::cue {
+            background: rgba(0, 0, 0, 0.8) !important;
+            color: #ffffff !important;
+            font-family: 'Assistant', sans-serif !important;
+            font-weight: 700 !important;
+            font-size: 1.2rem !important;
+            border-radius: 4px !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9) !important;
+        }
+
         .controls-container {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 60%, transparent 100%);
             padding: 20px 30px;
             transition: opacity 0.3s ease;
             opacity: 1;
+            z-index: 60;
+        }
+
+        #customPlayer.pip-mode .controls-container {
+            padding: 10px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
         }
 
         input[type=range] {
@@ -78,8 +101,6 @@
             transition: transform 0.1s;
         }
         input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.2); }
-        
-        #volumeSlider::-webkit-slider-thumb { background: #0ea5e9; box-shadow: 0 0 10px rgba(14, 165, 233, 0.6); }
 
         .player-btn {
             background: none; border: none; color: white; cursor: pointer;
@@ -87,17 +108,6 @@
             display: flex; align-items: center; justify-content: center; padding: 5px;
         }
         .player-btn:hover { color: #e50914; transform: scale(1.1); }
-        .player-btn.blue-hover:hover { color: #0ea5e9; }
-
-        .intro-bg { background-color: #000; z-index: 10000; }
-        .intro-text-zoom { transition: transform 2.5s cubic-bezier(0.1, 0.8, 0.2, 1), opacity 0.5s; }
-
-        .player-buffering-overlay {
-            position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
-        }
-        .player-buffering-overlay.active { opacity: 1; pointer-events: auto; }
 
         .toast-msg {
             position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
@@ -107,102 +117,63 @@
         }
         .toast-msg.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-        /* Profile Selection Screen with Dynamic Alignment */
-        #profileSelectScreen {
-            position: fixed; inset: 0; z-index: 9998; background: #080808;
-            display: none; transition: opacity 0.5s ease;
-        }
-        
-        .profile-side-bar {
-            position: absolute; top: 0; bottom: 0; width: 100%; max-width: 380px;
-            background: rgba(18, 18, 18, 0.95); backdrop-filter: blur(16px);
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-            border-right: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 20; padding: 40px 28px; display: flex; flex-direction: column;
-            justify-content: center; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+        .resume-btn-progress {
+            position: absolute; bottom: 0; right: 0; height: 4px;
+            background-color: #ff0000;
+            box-shadow: 0 0 10px #ff0000;
+            border-radius: 0 0 0.5rem 0.5rem;
+            transition: width 0.3s ease;
         }
 
-        html[dir="rtl"] .profile-side-bar {
-            right: 0; left: auto;
-            animation: slideInRight 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .card-progress-bar {
+            position: absolute; bottom: 0; left: 0; right: 0; height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .card-progress-fill {
+            height: 100%; background: #e50914; box-shadow: 0 0 8px #e50914;
         }
 
-        html[dir="ltr"] .profile-side-bar {
-            left: 0; right: auto;
-            animation: slideInLeft 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .details-hero-mask {
+            mask-image: linear-gradient(to top, transparent 0%, black 100%);
+            -webkit-mask-image: linear-gradient(to top, transparent 0%, black 80%);
         }
 
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .emoji-btn {
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .emoji-btn:hover {
+            transform: scale(1.35) translateY(-8px);
+            filter: drop-shadow(0 10px 15px rgba(229, 9, 20, 0.4));
         }
 
-        @keyframes slideInLeft {
-            from { transform: translateX(-100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        /* אנימציות כניסה להמלצות */
+        .animated-recommendations {
+            animation: fadeInUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .profile-item-card {
-            display: flex; align-items: center; gap: 16px; padding: 12px 16px;
-            background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px; cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-        }
-
-        .profile-item-card:hover {
-            background: rgba(229, 9, 20, 0.2); border-color: #e50914;
-            transform: scale(1.02); box-shadow: 0 8px 20px rgba(229, 9, 20, 0.3);
-        }
-
-        .profile-gallery-bg {
-            position: absolute; inset: 0; z-index: 10;
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-            gap: 16px; padding: 24px; opacity: 0.25; filter: blur(2px) grayscale(30%);
-            pointer-events: none; overflow: hidden;
-        }
-
-        .video-shrunk {
-            position: absolute !important;
-            top: 2rem !important;
-            left: 2rem !important;
-            width: 320px !important;
-            height: 180px !important;
-            border-radius: 12px;
-            border: 2px solid rgba(255,255,255,0.2);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.9);
-            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-            z-index: 60;
-            background: #000;
-        }
-
-        .avatar-option {
-            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-            cursor: pointer;
-            border: 3px solid transparent;
-        }
-        .avatar-option.selected {
-            border-color: #e50914;
-            transform: scale(1.15);
-            box-shadow: 0 10px 20px rgba(229,9,20,0.4);
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
     </style>
 </head>
 <body class="safe-area-inset pb-10" style="overflow: hidden;">
 
-    <!-- Toast Messages Container -->
     <div id="toast" class="toast-msg"></div>
 
-    <!-- Intro Overlay Screen -->
-    <div id="introScreen" class="fixed inset-0 intro-bg flex items-center justify-center transition-opacity duration-1000 z-[10000]">
-        <div id="bufferingState" class="flex flex-col items-center transition-opacity duration-500">
+    <!-- מסך טעינה ואינטרו -->
+    <div id="introScreen" class="fixed inset-0 bg-black flex items-center justify-center transition-opacity duration-1000 z-[10000]">
+        <div id="bufferingState" class="flex flex-col items-center">
             <div class="w-16 h-16 border-4 border-gray-800 border-t-[#e50914] rounded-full animate-spin mb-4 shadow-[0_0_15px_rgba(229,9,20,0.5)]"></div>
-            <p class="text-gray-400 font-bold tracking-widest text-sm animate-pulse uppercase">טוען חוויה קולנועית...</p>
+            <p class="text-gray-400 font-bold tracking-widest text-sm animate-pulse uppercase">סנכרון נתונים מ-shoval2-ec154...</p>
         </div>
-
-        <video id="userIntroVideo" class="hidden w-full h-full object-contain bg-black" playsinline muted disablePictureInPicture>
-            <source id="introSource" src="" type="video/mp4">
-        </video>
-
-        <div id="cssIntroState" class="hidden relative flex items-center justify-center opacity-0 scale-[0.8] intro-text-zoom">
+        <div id="cssIntroState" class="hidden relative flex items-center justify-center opacity-0 scale-[0.8] transition-all duration-1000">
             <h1 class="text-5xl md:text-8xl font-black tracking-tighter flex items-center z-10 drop-shadow-2xl">
                 <span class="text-white">SmartStr</span>
                 <span class="text-[#e50914] flex items-center"><i data-lucide="film" class="w-12 h-12 md:w-20 md:h-20 mx-1 stroke-[3]"></i>am</span>
@@ -210,150 +181,132 @@
         </div>
     </div>
 
-    <!-- Smart Company Sub-Profile Screen ("מי צופה עכשיו?") -->
-    <div id="profileSelectScreen">
-        <div class="profile-gallery-bg" id="profileGalleryBg"></div>
-
-        <div class="profile-side-bar">
-            <div class="flex items-center gap-2 mb-6">
-                <span class="text-2xl font-black text-white">Smart</span>
-                <span class="text-2xl font-black text-[#e50914]">Stream</span>
-            </div>
-
-            <h2 class="text-3xl font-black text-white mb-2 tracking-tight">מי צופה עכשיו?</h2>
-            <p class="text-xs text-gray-400 mb-6">בחר פרופיל אישי להרשאת צפייה ותוכן מותאם</p>
-
-            <div id="profilesContainer" class="flex flex-col gap-3"></div>
-
-            <button onclick="window.addNewSubProfile()" class="mt-4 w-full border border-dashed border-gray-600 hover:border-white text-gray-300 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
-                <i data-lucide="plus" class="w-4 h-4"></i> הוסף תת-פרופיל חדש
-            </button>
-
-            <button onclick="window.handleLogout()" class="mt-4 w-full text-red-500 hover:text-red-400 text-xs font-bold transition text-center py-1">
-                התנתק מהחשבון הראשי
-            </button>
-        </div>
-    </div>
-
-    <div id="createProfileModal" class="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-lg p-8 relative shadow-2xl">
-            <button onclick="window.closeCreateProfileModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">
+    <!-- מודאל התחברות / הרשמה -->
+    <div id="authModal" class="fixed inset-0 z-[9995] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+            <button onclick="window.closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">
                 <i data-lucide="x" class="w-6 h-6"></i>
             </button>
             
-            <h3 id="profileModalTitle" class="text-3xl font-black text-white mb-6 text-center">יצירת פרופיל צופה</h3>
-            
-            <div class="space-y-6">
-                <!-- Name -->
+            <h3 id="authModalTitle" class="text-2xl font-black text-white mb-2">התחברות לחשבון</h3>
+            <p id="authModalSub" class="text-xs text-gray-400 mb-6">התחבר כדי לסנכרן את נתוני הצפייה שלך בין כל המכשירים בענן.</p>
+
+            <form id="authForm" onsubmit="window.handleAuthSubmit(event)" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-bold text-gray-300 mb-2">שם הצופה</label>
-                    <input type="text" id="newProfileName" placeholder="הכנס שם..." class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#e50914] transition">
+                    <label class="block text-xs font-bold text-gray-300 mb-1">כתובת אימייל</label>
+                    <input type="email" id="authEmail" required placeholder="name@example.com" class="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#e50914]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">סיסמה</label>
+                    <input type="password" id="authPassword" required minlength="6" placeholder="••••••••" class="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-[#e50914]">
                 </div>
 
-                <!-- Kids Mode -->
-                <div class="flex items-center justify-between bg-black/30 p-4 rounded-lg border border-white/5">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                            <i data-lucide="baby" class="w-6 h-6"></i>
+                <button type="submit" id="authSubmitBtn" class="w-full bg-[#e50914] hover:bg-red-700 text-white font-bold py-3 rounded-lg transition shadow-lg mt-2">
+                    התחבר
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-white/10 text-center">
+                <p id="toggleAuthModeText" class="text-xs text-gray-400">
+                    אין לך חשבון עדיין? 
+                    <button onclick="window.toggleAuthMode()" class="text-[#e50914] font-bold hover:underline">ירשם עכשיו</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- מודאל פרטי סרט -->
+    <div id="movieDetailsModal" class="fixed inset-0 z-[9990] bg-black/90 backdrop-blur-xl hidden flex items-center justify-center p-2 md:p-6 overflow-y-auto">
+        <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-4xl overflow-hidden relative shadow-2xl my-auto">
+            <button onclick="window.closeMovieDetails()" class="absolute top-4 left-4 z-30 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full backdrop-blur-md transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <div class="relative h-64 md:h-96 w-full">
+                <img id="detailsHeroImg" src="" alt="Movie Cover" class="w-full h-full object-cover details-hero-mask">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#181818] via-[#181818]/40 to-transparent"></div>
+                <div class="absolute bottom-6 right-6 left-6 flex flex-col gap-2">
+                    <span id="detailsCategoryBadge" class="bg-[#e50914] text-white text-xs font-bold px-3 py-1 rounded-full w-max shadow-md">קטגוריה</span>
+                    <h2 id="detailsTitle" class="text-3xl md:text-5xl font-black text-white drop-shadow-lg">שם הסרט</h2>
+                    <div class="flex items-center gap-4 text-xs md:text-sm font-bold text-gray-300">
+                        <span id="detailsYear" class="text-gray-400">2024</span>
+                        <span id="detailsFormat" class="bg-white/10 border border-white/20 px-2 py-0.5 rounded font-mono text-[10px]">DASH / MP4</span>
+                        <span class="text-green-400 font-bold">Cloud Sync Enabled ☁️</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8 space-y-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <button id="resumeWatchBtn" onclick="window.startMovieFromDetails(false)" class="relative bg-white hover:bg-gray-200 text-black font-black px-6 py-3.5 rounded-lg flex items-center gap-3 text-base md:text-lg transition shadow-xl overflow-hidden group">
+                        <i data-lucide="play" class="w-6 h-6 fill-black group-hover:scale-110 transition-transform"></i>
+                        <span id="resumeBtnText">המשך צפייה</span>
+                        <div id="resumeProgressBar" class="resume-btn-progress" style="width: 0%;"></div>
+                    </button>
+
+                    <button id="restartWatchBtn" onclick="window.startMovieFromDetails(true)" class="bg-gray-800 hover:bg-gray-700 text-white font-bold px-6 py-3.5 rounded-lg flex items-center gap-3 text-base md:text-lg transition border border-white/10 shadow-lg">
+                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        <span>צפה מהתחלה</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
+                    <div class="md:col-span-2 space-y-3">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i data-lucide="file-text" class="w-5 h-5 text-[#e50914]"></i> תקציר הסרט
+                        </h3>
+                        <p id="detailsSynopsis" class="text-gray-300 leading-relaxed text-sm md:text-base">
+                            טוען תקציר...
+                        </p>
+                    </div>
+
+                    <div class="space-y-4 bg-black/40 p-4 rounded-xl border border-white/5 text-xs md:text-sm">
+                        <h4 class="text-white font-bold text-sm border-b border-white/10 pb-2 flex items-center gap-2">
+                            <i data-lucide="award" class="w-4 h-4 text-yellow-500"></i> יוצרים וקרדיטים
+                        </h4>
+                        <div>
+                            <span class="text-gray-400 block">בימוי / אולפן:</span>
+                            <span id="detailsDirector" class="text-white font-semibold">Blender Foundation</span>
                         </div>
                         <div>
-                            <h4 class="text-white font-bold text-sm">פרופיל ילדים</h4>
-                            <p class="text-xs text-gray-400">מגביל תכנים המותאמים לגילאים צעירים בלבד</p>
+                            <span class="text-gray-400 block">מדיניות ורישיון:</span>
+                            <span id="detailsLicense" class="text-emerald-400 font-semibold">Creative Commons BY 3.0</span>
                         </div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" id="kidsModeToggle" onchange="window.toggleKidsMode()" class="sr-only peer">
-                        <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#e50914] flex flex-row-reverse"></div>
-                    </label>
                 </div>
-
-                <!-- Age Rating -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-300 mb-2">הגבלת דירוג גיל</label>
-                    <select id="ageRatingSelect" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#e50914] transition appearance-none">
-                        <option value="all">לכל המשפחה</option>
-                        <option value="7">7+ (ילדים בוגרים)</option>
-                        <option value="13">13+ (נוער)</option>
-                        <option value="16">16+ (בוגרים)</option>
-                        <option value="18">18+ (מבוגרים בלבד)</option>
-                    </select>
-                </div>
-
-                <!-- Avatar Selection -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-300 mb-3">תמונת פרופיל</label>
-                    <div class="flex gap-4 justify-center" id="avatarSelectionGrid">
-                        <!-- Filled by JS -->
-                    </div>
-                </div>
-
-                <button onclick="window.saveNewProfile()" class="w-full bg-[#e50914] hover:bg-red-700 text-white font-bold py-4 rounded-xl transition shadow-lg text-lg flex items-center justify-center gap-2 mt-4">
-                    <i data-lucide="check" class="w-5 h-5"></i> שמור פרופיל
-                </button>
             </div>
         </div>
     </div>
 
-    <!-- Delete Profile Confirmation Modal -->
-    <div id="deleteConfirmModal" class="fixed inset-0 z-[10000] bg-black/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-sm p-6 relative shadow-2xl text-center">
-            <div class="w-16 h-16 bg-red-600/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i data-lucide="alert-triangle" class="w-8 h-8"></i>
-            </div>
-            <h3 class="text-xl font-bold text-white mb-2">מחיקת פרופיל</h3>
-            <p class="text-sm text-gray-400 mb-6">האם אתה בטוח שברצונך למחוק את הפרופיל <span id="deleteProfileName" class="font-bold text-white"></span>? פעולה זו אינה הפיכה.</p>
-            <div class="flex gap-3">
-                <button onclick="window.closeDeleteConfirm()" class="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2.5 rounded-lg transition">ביטול</button>
-                <button onclick="window.executeDeleteProfile()" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg transition">מחק פרופיל</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Navigation Header -->
-    <nav id="navbar" class="fixed top-0 w-full z-50 transition-all duration-300 px-6 md:px-12 py-4 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
+    <!-- נאו בר עליון -->
+    <nav class="fixed top-0 w-full z-50 transition-all duration-300 px-6 md:px-12 py-4 flex justify-between items-center bg-gradient-to-b from-black/90 to-transparent">
         <div class="flex items-center gap-8">
             <h1 class="text-3xl font-black tracking-tighter cursor-pointer" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
                 <span class="text-white">Smart</span><span class="text-[#e50914]">Stream</span>
             </h1>
             <div class="hidden md:flex gap-5 text-sm font-semibold text-gray-300">
                 <a href="#" class="text-white">ראשי</a>
-                <a href="#publicDomainSection" class="hover:text-[#e50914] transition">נחלת הכלל (Public Domain)</a>
-                <a href="#actionSection" class="hover:text-[#e50914] transition">אקשן ומדע בדיוני</a>
+                <a href="#continueWatchingSection" class="hover:text-[#e50914] transition">המשך צפייה 🍿</a>
+                <a href="#publicDomainSection" class="hover:text-[#e50914] transition">קלאסיקות</a>
                 <a href="#familySection" class="hover:text-[#e50914] transition">לכל המשפחה</a>
-                <a href="#myListSection" class="hover:text-[#e50914] transition">הרשימה שלי (בענן)</a>
             </div>
         </div>
         
         <div class="flex items-center gap-4 text-white">
-            <div class="text-xs bg-red-600/20 border border-red-500/30 text-red-400 px-3 py-1 rounded-full font-bold hidden sm:block">
-                ☁️ shoval2-ec154
+            <div id="userInfo" class="flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white" id="userAvatar">☁️</div>
+                <span id="userNameDisplay" class="text-xs font-bold text-gray-200">אורח מחובר</span>
+                <button id="logoutBtn" onclick="window.handleLogout()" class="hidden text-xs text-red-400 hover:text-red-300 font-bold border-r border-white/20 pr-2 mr-1">התנתק</button>
             </div>
-            
-            <div id="userAuthSection" class="flex items-center gap-3">
-                <button onclick="window.openAuthModal('login')" id="loginBtn" class="bg-[#e50914] hover:bg-red-700 text-white font-bold text-sm px-4 py-2 rounded-lg transition shadow-md">
-                    התחברות / הרשמה
-                </button>
-                <div id="userInfo" class="hidden flex items-center gap-3 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full">
-                    <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-red-600 to-amber-500 flex items-center justify-center font-bold text-xs text-white" id="userAvatar">
-                        U
-                    </div>
-                    <span id="userNameDisplay" class="text-xs font-bold text-gray-200 max-w-[100px] truncate">משתמש</span>
-                    
-                    <!-- Switch Profile Button / החלף צופה -->
-                    <button onclick="window.showProfileSelection()" class="text-xs bg-white/10 hover:bg-white/20 text-gray-300 hover:text-white px-2.5 py-1 rounded-md transition flex items-center gap-1 font-semibold" title="החלף צופה / פרופיל">
-                        <i data-lucide="users" class="w-3.5 h-3.5 text-[#e50914]"></i> החלף צופה
-                    </button>
 
-                    <button onclick="window.handleLogout()" title="התנתק" class="text-gray-400 hover:text-red-500 transition ml-1">
-                        <i data-lucide="log-out" class="w-4 h-4"></i>
-                    </button>
-                </div>
-            </div>
+            <button id="authBtnModalToggle" onclick="window.openAuthModal()" class="bg-[#e50914] hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-full transition shadow-lg flex items-center gap-1.5">
+                <i data-lucide="user" class="w-4 h-4"></i> התחברות / הרשמה
+            </button>
         </div>
     </nav>
 
-    <!-- Main Hero Banner -->
-    <header class="relative h-[80vh] w-full flex items-center">
+    <!-- הירו / באנר ראשי -->
+    <header class="relative h-[75vh] w-full flex items-center">
         <div class="absolute inset-0 z-0">
             <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg" alt="Hero Background" class="w-full h-full object-cover opacity-40">
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
@@ -362,242 +315,124 @@
 
         <div class="relative z-10 px-6 md:px-12 max-w-2xl pt-20">
             <div class="flex items-center gap-2 mb-4">
-                <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-[0_0_15px_rgba(229,9,20,0.5)]">בלעדי</span>
+                <span class="bg-red-600 text-white text-xs font-bold px-2 py-0.5 rounded shadow-[0_0_15px_rgba(229,9,20,0.5)]">מומלץ</span>
                 <span class="text-gray-300 text-sm font-bold tracking-widest uppercase">Smart Original</span>
             </div>
-            <h2 class="text-5xl md:text-7xl font-black text-white mb-4 leading-none text-shadow-xl">Tears of Steel</h2>
-            <div class="flex items-center gap-4 text-sm font-bold text-gray-400 mb-6">
-                <span class="text-green-500">98% התאמה</span>
-                <span>2012</span>
-                <span class="border border-gray-500 px-1 rounded text-xs">13+</span>
-                <span>מדע בדיוני</span>
-            </div>
+            <h2 class="text-5xl md:text-7xl font-black text-white mb-4 leading-none drop-shadow-xl">Tears of Steel</h2>
             <p class="text-lg text-gray-200 mb-8 leading-relaxed font-medium drop-shadow-md">
-                הרפתקת מדע בדיוני עתידנית מרהיבה. קבוצת לוחמים ומדענים מתאספת בכנסייה נטושה באמסטרדם כדי להציל את העולם מרובוטים הרסניים.
+                הרפתקת מדע בדיוני עתידנית מרהיבה. קבוצת לוחמים ומדענים מתאספת כדי להציל את העולם מרובוטים הרסניים.
             </p>
-            <div class="flex gap-4">
-                <button onclick="window.playMovieDirectly('https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd', 'Tears of Steel', true, true, 'action')" class="bg-white hover:bg-gray-200 text-black font-bold py-3 px-8 rounded-lg flex items-center gap-3 text-lg transition shadow-lg">
-                    <i data-lucide="play" class="w-6 h-6 fill-black"></i> נגן עכשיו
-                </button>
-                <button onclick="window.toggleFavoriteCloud('m4', 'Tears of Steel', 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg', 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd', true, true)" class="bg-gray-500/50 hover:bg-gray-500/70 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-3 text-lg transition border border-white/20 backdrop-blur-sm">
-                    <i data-lucide="bookmark" class="w-6 h-6"></i> שמור ברשימה שלי
-                </button>
-            </div>
+            <button onclick="window.openMovieDetails('a1')" class="bg-white hover:bg-gray-200 text-black font-bold py-3 px-8 rounded-lg flex items-center gap-3 text-lg transition shadow-lg">
+                <i data-lucide="info" class="w-6 h-6"></i> פרטי הסרט וצפייה
+            </button>
         </div>
     </header>
 
-    <!-- Main Content Categories -->
+    <!-- שורות סרטים -->
     <main class="relative z-10 px-6 md:px-12 -mt-10 space-y-12 pb-20">
-        <!-- Public Domain & Classics Shelf -->
+        <div id="continueWatchingSection" class="hidden">
+            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <span class="w-1.5 h-6 bg-red-600 rounded-full"></span>
+                המשך צפייה בפרופיל שלך 🍿
+            </h3>
+            <div class="flex gap-4 overflow-x-auto pb-6 hide-scrollbar" id="continueWatchingRow"></div>
+        </div>
+
         <div id="publicDomainSection">
             <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <span class="w-1.5 h-6 bg-purple-600 rounded-full"></span>
-                נחלת הכלל וקלאסיקות (Public Domain)
+                קלאסיקות בקולנוע (Public Domain)
             </h3>
             <div class="flex gap-4 overflow-x-auto pb-6 hide-scrollbar" id="publicDomainRow"></div>
         </div>
 
         <div id="familySection">
             <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <span class="w-1.5 h-6 bg-red-600 rounded-full"></span>
+                <span class="w-1.5 h-6 bg-blue-600 rounded-full"></span>
                 אנימציות לכל המשפחה
             </h3>
             <div class="flex gap-4 overflow-x-auto pb-6 hide-scrollbar" id="familyRow"></div>
         </div>
-
-        <div id="actionSection">
-            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <span class="w-1.5 h-6 bg-[#991b1b] rounded-full"></span>
-                מדע בדיוני ואקשן
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-6 hide-scrollbar" id="actionRow"></div>
-        </div>
-
-        <div id="myListSection">
-            <h3 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <span class="w-1.5 h-6 bg-yellow-500 rounded-full"></span>
-                הרשימה שלי (מסונכרן בענן ☁️)
-            </h3>
-            <div class="flex gap-4 overflow-x-auto pb-6 hide-scrollbar" id="favoritesRow">
-                <div class="text-gray-500 text-sm py-4 w-full">הרשימה שלך נטענת...</div>
-            </div>
-        </div>
     </main>
 
-    <!-- Authentication Modal Dialog -->
-    <div id="authModal" class="fixed inset-0 z-[10000] bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="bg-[#181818] border border-white/10 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <button onclick="window.closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-
-            <!-- Step 1: Email & Password Form -->
-            <div id="authStep1">
-                <div class="text-center mb-6">
-                    <h3 id="authModalTitle" class="text-2xl font-black text-white mb-1">התחברות ל-SmartStream</h3>
-                    <p class="text-xs text-gray-400">תתחבר כדי לגשת לפרופיל האישי שלך</p>
-                </div>
-
-                <div class="flex border-b border-gray-700 mb-6">
-                    <button id="tabLogin" onclick="window.switchAuthTab('login')" class="flex-1 pb-3 font-bold text-sm text-[#e50914] border-b-2 border-[#e50914] transition">התחברות</button>
-                    <button id="tabRegister" onclick="window.switchAuthTab('register')" class="flex-1 pb-3 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition">הרשמה חדשה</button>
-                </div>
-
-                <form id="authForm" onsubmit="window.handleAuthSubmitStep1(event)" class="space-y-4">
-                    <div id="nameInputGroup" class="hidden">
-                        <label class="block text-xs font-bold text-gray-300 mb-1">שם מלא</label>
-                        <input type="text" id="authName" placeholder="ישראל ישראלי" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#e50914] transition">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-300 mb-1">כתובת אימייל</label>
-                        <input type="email" id="authEmail" required placeholder="user@example.com" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#e50914] transition" dir="ltr">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-gray-300 mb-1">סיסמה</label>
-                        <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#e50914] transition" dir="ltr">
-                    </div>
-
-                    <!-- reCAPTCHA Human Verification Mock Checkbox -->
-                    <div class="bg-black/40 border border-white/10 p-3 rounded-lg flex items-center justify-between">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="recaptchaCheck" required class="w-5 h-5 accent-[#e50914]">
-                            <span class="text-xs font-bold text-gray-200">אני לא רובוט (reCAPTCHA)</span>
-                        </label>
-                        <i data-lucide="shield-check" class="w-5 h-5 text-green-500"></i>
-                    </div>
-
-                    <!-- Remember Me Option -->
-                    <div class="flex items-center justify-between text-xs text-gray-300">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="rememberMeCheck" checked class="w-4 h-4 accent-[#e50914]">
-                            <span>זכור אותי במכשיר זה (Remember Me)</span>
-                        </label>
-                    </div>
-
-                    <div id="authError" class="hidden text-red-500 text-xs font-bold text-center bg-red-500/10 py-2 border border-red-500/20 rounded"></div>
-
-                    <button type="submit" id="authSubmitBtn" class="w-full bg-[#e50914] hover:bg-red-700 text-white font-bold py-3 rounded-lg transition shadow-lg flex justify-center items-center gap-2">
-                        <span>המשך לאימות דו-שלבי</span>
-                    </button>
-
-                    <!-- Send Sign-In Link or SMS Code Options -->
-                    <div class="grid grid-cols-2 gap-2 pt-1">
-                        <button type="button" onclick="window.handleEmailLinkLogin()" class="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2 rounded-lg transition text-[11px] flex justify-center items-center gap-1 border border-white/10">
-                            <i data-lucide="mail" class="w-3.5 h-3.5 text-sky-400"></i> קישור במייל
-                        </button>
-                        <button type="button" onclick="window.handleSMSCodeSend()" class="bg-neutral-800 hover:bg-neutral-700 text-white font-bold py-2 rounded-lg transition text-[11px] flex justify-center items-center gap-1 border border-white/10">
-                            <i data-lucide="message-square" class="w-3.5 h-3.5 text-emerald-400"></i> שליחה ב-SMS
-                        </button>
-                    </div>
-
-                    <!-- Biometric / Passkey Login Option -->
-                    <button type="button" onclick="window.handlePasskeyLogin()" class="w-full bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 rounded-lg transition text-xs flex justify-center items-center gap-2 border border-white/10">
-                        <i data-lucide="fingerprint" class="w-4 h-4 text-[#e50914]"></i> התחבר באמצעות מפתח ביומטרי (Passkey)
-                    </button>
-                </form>
-            </div>
-
-            <!-- Step 2: 2-Step Verification (Email/SMS Code) -->
-            <div id="authStep2" class="hidden">
-                <div class="text-center mb-6">
-                    <div class="w-12 h-12 bg-red-600/20 border border-red-500/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i data-lucide="mail-check" class="w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-2xl font-black text-white mb-1">אימות דו-שלבי (2FA)</h3>
-                    <p class="text-xs text-gray-400">קוד אימות בן 6 ספרות נשלח מכתובת השרת: <br><span class="text-white font-mono dir-ltr inline-block bg-black/40 px-2 py-1 rounded mt-1">noreply@shoval2-ec154.firebaseapp.com</span> או ב-SMS</p>
-                </div>
-
-                <form onsubmit="window.handleAuthSubmitStep2(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-300 mb-1 text-center">הזן קוד אימות 6 ספרות</label>
-                        <input type="text" id="twoFactorCode" maxlength="6" required placeholder="123456" class="w-full bg-black/50 border border-white/20 rounded-lg px-4 py-3 text-center text-2xl font-mono tracking-widest text-white focus:outline-none focus:border-[#e50914] transition" dir="ltr">
-                    </div>
-
-                    <div class="flex items-center justify-between text-xs text-gray-300">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" id="trustDevice30Days" checked class="w-4 h-4 accent-[#e50914]">
-                            <span>בטח במכשיר זה ל-30 ימים (Trust Device)</span>
-                        </label>
-                    </div>
-
-                    <div id="step2Error" class="hidden text-red-500 text-xs font-bold text-center bg-red-500/10 py-2 border border-red-500/20 rounded"></div>
-
-                    <button type="submit" id="verify2FABtn" class="w-full bg-[#e50914] hover:bg-red-700 text-white font-bold py-3 rounded-lg transition shadow-lg">
-                        אמת קוד והיכנס
-                    </button>
-                </form>
-            </div>
-
-        </div>
-    </div>
-
-    <!-- Custom High Performance Video Player -->
+    <!-- נגן סרטים מותאם אישית -->
     <div id="customPlayer">
-        <div id="playerBuffering" class="player-buffering-overlay">
-            <div class="w-16 h-16 border-4 border-gray-800 border-t-[#e50914] rounded-full animate-spin shadow-[0_0_20px_rgba(229,9,20,0.8)] mb-3"></div>
-            <span class="text-white text-sm font-bold tracking-widest uppercase animate-pulse">טוען שידור...</span>
-        </div>
+        <video id="mainVideo" class="w-full h-full object-contain bg-black" playsinline preload="auto">
+            <track kind="captions" src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:01.000%20--%3E%2000:00:10.000%20ברוכים%20הבאים%20ל-SmartStream!%0A00:00:11.000%20--%3E%2000:00:25.000%20צפייה%20מהנה%20בתוכן%20האיכותי." srclang="he" label="עברית" default>
+            <track kind="captions" src="data:text/vtt;charset=utf-8,WEBVTT%0A%0A00:00:01.000%20--%3E%2000:00:10.000%20Welcome%20to%20SmartStream!%0A00:00:11.000%20--%3E%2000:00:25.000%20Enjoy%20watching%20the%20content." srclang="en" label="English">
+        </video>
 
-        <video id="mainVideo" class="w-full h-full object-contain bg-black" playsinline preload="auto" disablePictureInPicture controlsList="nodownload noplaybackrate"></video>
-
-        <div id="postMovieOverlay" class="absolute inset-0 z-50 hidden flex-col items-center justify-center bg-gradient-to-t from-black via-black/90 to-black/60 backdrop-blur-md transition-opacity duration-1000 opacity-0 p-10">
-            
-            <!-- Step 1: Rating -->
-            <div id="ratingSection" class="text-center w-full max-w-3xl transition-all duration-500 flex flex-col items-center">
-                <div class="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full mb-6 shadow-[0_0_15px_rgba(229,9,20,0.5)] animate-pulse">הסרט הסתיים</div>
-                <h2 class="text-4xl md:text-5xl font-black text-white mb-10 drop-shadow-lg">איך הייתה חווית הצפייה שלך?</h2>
+        <!-- מסך דירוג והמלצות (Post-Play End Screen) -->
+        <div id="postPlayModal" class="fixed inset-0 bg-black/92 backdrop-blur-2xl z-[9998] hidden flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+            <div class="max-w-3xl w-full space-y-6 my-auto pt-8">
                 
-                <div class="flex flex-wrap justify-center gap-6 md:gap-8">
-                    <button onclick="window.submitRating('good')" class="group flex flex-col items-center gap-3 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10 flex items-center justify-center text-4xl md:text-5xl group-hover:bg-blue-500/50 group-hover:shadow-[0_0_25px_rgba(59,130,246,0.6)] border border-white/5 transition-all">👍</div>
-                        <span class="text-gray-300 font-bold group-hover:text-blue-400 transition-colors">טוב</span>
-                    </button>
-                    
-                    <button onclick="window.submitRating('very_good')" class="group flex flex-col items-center gap-3 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10 flex items-center justify-center text-4xl md:text-5xl group-hover:bg-green-500/50 group-hover:shadow-[0_0_25px_rgba(34,197,94,0.6)] border border-white/5 transition-all">😊</div>
-                        <span class="text-gray-300 font-bold group-hover:text-green-400 transition-colors">טוב ואהבתי</span>
-                    </button>
-                    
-                    <button onclick="window.submitRating('loved')" class="group flex flex-col items-center gap-3 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10 flex items-center justify-center text-4xl md:text-5xl group-hover:bg-pink-500/50 group-hover:shadow-[0_0_25px_rgba(236,72,153,0.6)] border border-white/5 transition-all">💕</div>
-                        <span class="text-gray-300 font-bold group-hover:text-pink-400 transition-colors">אהבתי מאוד</span>
-                    </button>
+                <!-- כרטיסיית תמונת שער של הסרט שנוגן + כותרת -->
+                <div class="flex flex-col md:flex-row items-center justify-center gap-6 bg-white/5 p-6 rounded-2xl border border-white/10 shadow-2xl">
+                    <img id="postPlayPosterImg" src="" alt="Poster" class="w-28 h-40 md:w-36 md:h-52 object-cover rounded-xl shadow-2xl border border-white/20">
+                    <div class="text-right space-y-2 max-w-md">
+                        <span class="bg-[#e50914] text-white text-[11px] font-bold px-3 py-1 rounded-full animate-pulse inline-block">הסרט הגיע לקרדיטים 🎬</span>
+                        <h3 id="postPlayMovieTitle" class="text-2xl md:text-4xl font-black text-white">מה דעתך על הסרט?</h3>
+                        <p class="text-gray-300 text-xs md:text-sm">דרג עכשיו בלחיצה אחת כדי לעזור לנו להציע לך תכנים שאהבת:</p>
+                        
+                        <!-- דירוג אימוג'ים מעודכן -->
+                        <div id="emojiRatingContainer" class="flex items-center gap-4 pt-3">
+                            <button onclick="window.rateMovieWithEmoji('👎', 'לא אהבתי')" class="emoji-btn text-3xl md:text-4xl p-2 bg-black/40 rounded-full border border-white/10 hover:border-red-500 focus:outline-none" title="לא אהבתי">👎</button>
+                            <button onclick="window.rateMovieWithEmoji('👍', 'אהבתי')" class="emoji-btn text-3xl md:text-4xl p-2 bg-black/40 rounded-full border border-white/10 hover:border-green-500 focus:outline-none" title="אהבתי">👍</button>
+                            <button onclick="window.rateMovieWithEmoji('💖', 'אהבתי מאוד')" class="emoji-btn text-3xl md:text-4xl p-2 bg-black/40 rounded-full border border-white/10 hover:border-pink-500 focus:outline-none" title="אהבתי מאוד">💖</button>
+                            <button onclick="window.rateMovieWithEmoji('👌', 'מושלם')" class="emoji-btn text-3xl md:text-4xl p-2 bg-black/40 rounded-full border border-white/10 hover:border-yellow-500 focus:outline-none" title="מושלם">👌</button>
+                        </div>
+                    </div>
+                </div>
 
-                    <button onclick="window.submitRating('perfect')" class="group flex flex-col items-center gap-3 hover:-translate-y-2 transition-transform duration-300">
-                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-full bg-white/10 flex items-center justify-center text-4xl md:text-5xl group-hover:bg-amber-500/50 group-hover:shadow-[0_0_25px_rgba(245,158,11,0.6)] border border-white/5 transition-all">👌</div>
-                        <span class="text-gray-300 font-bold group-hover:text-amber-400 transition-colors">מושלם</span>
+                <!-- שורת המלצות עשירה עם אנימציה -->
+                <div id="postPlayRecContainer" class="space-y-4 pt-2 text-right hidden">
+                    <h4 class="text-white font-bold text-base md:text-lg flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-yellow-500"></i> מומלצים במיוחד בשבילך
+                    </h4>
+                    <div id="postPlayRecommendationsRow" class="flex gap-4 overflow-x-auto pb-4 hide-scrollbar justify-start">
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-4 pt-2">
+                    <button onclick="window.replayMovie()" class="bg-gray-800 hover:bg-gray-700 text-white font-bold px-6 py-3 rounded-lg flex items-center gap-2 transition border border-white/10 text-sm">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> צפה שוב
+                    </button>
+                    <button onclick="window.closePlayer()" class="bg-[#e50914] hover:bg-red-700 text-white font-bold px-6 py-3 rounded-lg transition shadow-lg text-sm">
+                        חזור לראשי
                     </button>
                 </div>
             </div>
+        </div>
 
-            <!-- Step 2: Recommendations -->
-            <div id="recsSection" class="hidden text-center w-full max-w-5xl transition-all duration-500 flex-col items-center">
-                <h2 class="text-3xl md:text-4xl font-black text-white mb-3 flex items-center gap-3">
-                    <i data-lucide="sparkles" class="text-yellow-400 w-8 h-8"></i> בגלל שצפית בזה...
-                </h2>
-                <p class="text-gray-400 mb-8">המלצות מותאמות אישית מבוססות על הדירוגים שלך וסוג התוכן</p>
-                
-                <div id="postMovieRecsContainer" class="flex justify-center flex-wrap md:flex-nowrap gap-6 w-full py-4">
-                    <!-- Cards will be injected here -->
-                </div>
-                
-                <button onclick="window.closePlayer()" class="mt-10 bg-white/10 hover:bg-white/20 border border-white/20 text-white px-8 py-3 rounded-full font-bold transition flex items-center gap-2 mx-auto">
-                    <i data-lucide="x" class="w-5 h-5"></i> סגור נגן וחזור לראשי
-                </button>
+        <div id="speedMenuModal" class="absolute bottom-20 left-36 z-50 bg-black/90 border border-white/20 rounded-xl p-3 hidden backdrop-blur-md w-36 shadow-2xl">
+            <h4 class="text-xs font-bold text-gray-400 mb-2 border-b border-white/10 pb-1">מהירות השמעה</h4>
+            <div class="flex flex-col gap-1 text-xs">
+                <button onclick="window.setPlaybackSpeed(0.5)" class="text-right px-2 py-1 hover:bg-red-600 rounded text-white font-bold transition">0.5x</button>
+                <button onclick="window.setPlaybackSpeed(1.0)" class="text-right px-2 py-1 hover:bg-red-600 rounded text-white font-bold transition">1.0x (רגיל)</button>
+                <button onclick="window.setPlaybackSpeed(1.25)" class="text-right px-2 py-1 hover:bg-red-600 rounded text-white font-bold transition">1.25x</button>
+                <button onclick="window.setPlaybackSpeed(1.5)" class="text-right px-2 py-1 hover:bg-red-600 rounded text-white font-bold transition">1.5x</button>
+                <button onclick="window.setPlaybackSpeed(2.0)" class="text-right px-2 py-1 hover:bg-red-600 rounded text-white font-bold transition">2.0x</button>
             </div>
         </div>
 
-        <div id="playerTopBar" class="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300 z-50">
-            <button onclick="window.closePlayer()" class="text-white hover:text-red-500 transition flex items-center gap-2 font-bold text-lg drop-shadow-md">
+        <div id="ccMenuModal" class="absolute bottom-20 left-12 z-50 bg-black/90 border border-white/20 rounded-xl p-3 hidden backdrop-blur-md w-48 shadow-2xl">
+            <h4 class="text-xs font-bold text-gray-400 mb-2 border-b border-white/10 pb-1">שפת כתוביות (CC)</h4>
+            <div class="flex flex-col gap-1 text-xs">
+                <button onclick="window.setSubtitleTrack('he')" class="text-right px-2 py-1.5 hover:bg-red-600 rounded text-white font-bold transition">🇮🇱 עברית</button>
+                <button onclick="window.setSubtitleTrack('en')" class="text-right px-2 py-1.5 hover:bg-red-600 rounded text-white font-bold transition">🇺🇸 אנגלית</button>
+                <button onclick="window.setSubtitleTrack('off')" class="text-right px-2 py-1.5 hover:bg-gray-700 rounded text-gray-300 font-bold transition mt-1">כבוי</button>
+            </div>
+        </div>
+
+        <div id="playerTopHeader" class="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 to-transparent z-50">
+            <button onclick="window.closePlayer()" class="text-white hover:text-red-500 transition flex items-center gap-2 font-bold text-lg">
                 <i data-lucide="arrow-right" class="w-8 h-8"></i> חזור
             </button>
-            <h3 id="playerMovieTitle" class="text-white font-bold text-xl drop-shadow-md">שם הסרט</h3>
-            <div class="w-8"></div>
+            <h3 id="playerMovieTitle" class="text-white font-bold text-xl">שם הסרט</h3>
+            <div></div>
         </div>
 
-        <div id="videoControls" class="controls-container z-50">
+        <div class="controls-container">
             <div class="w-full flex items-center gap-3 mb-2">
                 <span id="currentTimeDisplay" class="text-xs font-bold text-gray-300 font-mono">00:00</span>
                 <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1" class="flex-1">
@@ -605,60 +440,40 @@
             </div>
 
             <div class="flex justify-between items-center">
-                <div class="flex items-center gap-4">
-                    <button id="playPauseBtn" class="player-btn">
-                        <i data-lucide="play" class="w-8 h-8 fill-current"></i>
+                <div class="flex items-center gap-3 md:gap-4">
+                    <button id="playPauseBtn" onclick="window.togglePlayPause()" class="player-btn"><i data-lucide="play" class="w-8 h-8 fill-current"></i></button>
+                    
+                    <button onclick="window.skipTime(-10)" class="player-btn" title="אחורה 10 שניות">
+                        <i data-lucide="rotate-ccw" class="w-6 h-6"></i>
                     </button>
-                    <button id="rewindBtn" class="player-btn" title="10 שניות אחורה">
-                        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-                    </button>
-                    <button id="forwardBtn" class="player-btn" title="10 שניות קדימה">
-                        <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+                    <button onclick="window.skipTime(10)" class="player-btn" title="קדימה 10 שניות">
+                        <i data-lucide="rotate-cw" class="w-6 h-6"></i>
                     </button>
 
-                    <div class="flex items-center gap-2 ml-4 group">
-                        <button id="muteBtn" class="player-btn blue-hover">
+                    <div class="flex items-center gap-2 mr-2">
+                        <button id="volumeBtn" onclick="window.toggleMute()" class="player-btn">
                             <i data-lucide="volume-2" class="w-6 h-6"></i>
                         </button>
-                        <input type="range" id="volumeSlider" min="0" max="1" value="1" step="0.05" class="w-0 opacity-0 group-hover:w-20 group-hover:opacity-100 transition-all duration-300 ease-out origin-left">
+                        <input type="range" id="volumeBar" min="0" max="1" step="0.05" value="1" class="w-16 md:w-24 hidden md:block">
                     </div>
                 </div>
 
-                <div class="flex items-center gap-4">
-                    <button id="speedBtn" class="player-btn text-sm font-bold px-2">1x</button>
-                    <button id="fullscreenBtn" class="player-btn">
-                        <i data-lucide="maximize" class="w-6 h-6"></i>
+                <div class="flex items-center gap-2 md:gap-3">
+                    <button onclick="window.toggleSpeedMenu()" class="player-btn text-xs font-extrabold border border-white/40 px-2 py-1 rounded hover:border-red-500" title="מהירות השמעה">
+                        <span id="currentSpeedLabel">1.0x</span>
                     </button>
+                    <button onclick="window.toggleCCMenu()" class="player-btn text-xs font-extrabold border border-white/40 px-2 py-1 rounded hover:border-red-500">CC</button>
+                    <button onclick="window.togglePictureInPicture()" class="player-btn" title="תמונה בתוך תמונה"><i data-lucide="picture-in-picture-2" class="w-6 h-6"></i></button>
+                    <button onclick="window.toggleFullscreen()" class="player-btn" title="מסך מלא"><i data-lucide="maximize" class="w-6 h-6"></i></button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Application JavaScript Logic -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
-            onAuthStateChanged,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut,
-            updateProfile,
-            sendSignInLinkToEmail
-        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            setDoc, 
-            getDoc, 
-            collection, 
-            getDocs, 
-            query, 
-            deleteDoc,
-            updateDoc
-        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDocs, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyA27O_tEwAdUIUN4NxwBjdQi8FcTjHOAM0",
@@ -666,779 +481,497 @@
             projectId: "shoval2-ec154",
             storageBucket: "shoval2-ec154.firebasestorage.app",
             messagingSenderId: "118826356032",
-            appId: "1:118826356032:web:a987981f3b450b3fce3ea5",
-            measurementId: "G-RDLQLBSLKS"
+            appId: "1:118826356032:web:a987981f3b450b3fce3ea5"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const appId = firebaseConfig.projectId;
 
-        window.auth = auth;
-        window.db = db;
-        window.appId = appId;
+        let currentUser = null;
+        let cloudWatchProgress = {};
+        let isSignUpMode = false;
+        let hasShownPostPlay = false;
 
-        let generated2FACode = null;
-        let pendingUserCred = null;
-        let targetUserEmail = "";
-
-        const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else if (!auth.currentUser) {
-                    const remembered = localStorage.getItem("smartstream_remember_user");
-                    if (!remembered) {
-                        await signInAnonymously(auth).catch(() => {});
-                    }
-                }
-            } catch(e) {
-                console.warn("Auth initialization warning:", e);
-            }
-        };
-        initAuth();
-
-        onAuthStateChanged(auth, (user) => {
-            window.currentUser = user;
-            if (window.updateUserUI) {
-                window.updateUserUI(user);
-            }
-            if (user && !user.isAnonymous) {
-                window.loadUserSubProfiles();
-                if (window.loadFavoritesFromCloud) {
-                    window.loadFavoritesFromCloud();
-                }
-            }
-        });
-
-        let currentAuthMode = 'login';
-
-        window.openAuthModal = (mode = 'login') => {
-            currentAuthMode = mode;
-            window.switchAuthTab(mode);
-            document.getElementById('authStep1')?.classList.remove('hidden');
-            document.getElementById('authStep2')?.classList.add('hidden');
-            const modal = document.getElementById('authModal');
-            if (modal) modal.classList.remove('hidden');
-            const errDiv = document.getElementById('authError');
-            if (errDiv) errDiv.classList.add('hidden');
-        };
-
-        window.closeAuthModal = () => {
-            const modal = document.getElementById('authModal');
-            if (modal) modal.classList.add('hidden');
-        };
-
-        window.switchAuthTab = (mode) => {
-            currentAuthMode = mode;
-            const tabLogin = document.getElementById('tabLogin');
-            const tabRegister = document.getElementById('tabRegister');
-            const nameInputGroup = document.getElementById('nameInputGroup');
-            const authModalTitle = document.getElementById('authModalTitle');
-            const authSubmitBtn = document.getElementById('authSubmitBtn');
-            
-            if (mode === 'login') {
-                tabLogin.classList.replace('text-gray-400', 'text-[#e50914]');
-                tabLogin.classList.replace('border-transparent', 'border-[#e50914]');
-                tabRegister.classList.replace('text-[#e50914]', 'text-gray-400');
-                tabRegister.classList.replace('border-[#e50914]', 'border-transparent');
-                nameInputGroup.classList.add('hidden');
-                authModalTitle.innerText = 'התחברות ל-SmartStream';
-                authSubmitBtn.innerHTML = '<span>המשך לאימות דו-שלבי</span>';
-            } else {
-                tabRegister.classList.replace('text-gray-400', 'text-[#e50914]');
-                tabRegister.classList.replace('border-transparent', 'border-[#e50914]');
-                tabLogin.classList.replace('text-[#e50914]', 'text-gray-400');
-                tabLogin.classList.replace('border-[#e50914]', 'border-transparent');
-                nameInputGroup.classList.remove('hidden');
-                authModalTitle.innerText = 'הרשמה ל-SmartStream';
-                authSubmitBtn.innerHTML = '<span>צור חשבון והמשך</span>';
+        const moviesCatalog = {
+            'pd1': {
+                id: 'pd1', title: 'Night of the Living Dead', year: 1968, category: 'אימה קלאסי',
+                img: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Night_of_the_Living_Dead_%281968%29_poster.jpg',
+                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                isDash: false, director: 'George A. Romero', license: 'Public Domain',
+                synopsis: 'סרט האימה הקלאסי המכונן ששינה את ז׳אנר הזומבים לנצח.'
+            },
+            'f1': {
+                id: 'f1', title: 'Big Buck Bunny', year: 2008, category: 'אנימציה לכל המשפחה',
+                img: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg',
+                video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd',
+                isDash: true, director: 'Blender Institute', license: 'Creative Commons 3.0',
+                synopsis: 'סיפורו של שפן ענק וטוב לב שהחליט לנקום במציקנים ביער.'
+            },
+            'a1': {
+                id: 'a1', title: 'Tears of Steel', year: 2012, category: 'מדע בדיוני ואקשן',
+                img: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+                video: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.mpd',
+                isDash: true, director: 'Ian Hubert / Blender Institute', license: 'Creative Commons 3.0',
+                synopsis: 'הרפתקת מדע בדיוני עתידנית מרהיבה בעיר אמסטרדם. קבוצת לוחמים מנסה להציל את העולם מרובוטים.'
+            },
+            'pd2': {
+                id: 'pd2', title: 'Charade', year: 1963, category: 'מתח ורומנטיקה',
+                img: 'https://upload.wikimedia.org/wikipedia/commons/4/46/Charade_poster.jpg',
+                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                isDash: false, director: 'Stanley Donen', license: 'Public Domain',
+                synopsis: 'קלאסיקת מתח ובלש מעולה בכיכובם של אודרי הפבורן וקארי גרנט.'
+            },
+            'f2': {
+                id: 'f2', title: 'Sintel', year: 2010, category: 'הרפתקאות ואנימציה',
+                img: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg',
+                video: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                isDash: false, director: 'Colin Levy / Blender Foundation', license: 'Creative Commons 3.0',
+                synopsis: 'מסע מרגש של נערה צעירה המחפשת את דרקונה הקטן שנחטף.'
             }
         };
 
-        window.showToast = (msg) => {
+        const showToast = (msg) => {
             const toast = document.getElementById('toast');
             toast.innerText = msg;
             toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 3500);
         };
 
-        window.handleAuthSubmitStep1 = async (e) => {
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                await signInAnonymously(auth);
+            } else {
+                currentUser = user;
+                const userNameDisplay = document.getElementById('userNameDisplay');
+                const logoutBtn = document.getElementById('logoutBtn');
+                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
+
+                if (user.isAnonymous) {
+                    userNameDisplay.innerText = "אורח מחובר בענן";
+                    logoutBtn.classList.add('hidden');
+                    authBtnModalToggle.classList.remove('hidden');
+                } else {
+                    userNameDisplay.innerText = user.email;
+                    logoutBtn.classList.remove('hidden');
+                    authBtnModalToggle.classList.add('hidden');
+                }
+
+                await loadWatchProgressFromCloud();
+            }
+        });
+
+        window.openAuthModal = () => document.getElementById('authModal').classList.remove('hidden');
+        window.closeAuthModal = () => document.getElementById('authModal').classList.add('hidden');
+
+        window.toggleAuthMode = () => {
+            isSignUpMode = !isSignUpMode;
+            document.getElementById('authModalTitle').innerText = isSignUpMode ? "הרשמה לחשבון חדש" : "התחברות לחשבון";
+            document.getElementById('authSubmitBtn').innerText = isSignUpMode ? "צור חשבון" : "התחבר";
+            document.getElementById('toggleAuthModeText').innerHTML = isSignUpMode 
+                ? 'כבר יש לך חשבון? <button onclick="window.toggleAuthMode()" class="text-[#e50914] font-bold hover:underline">התחבר כאן</button>'
+                : 'אין לך חשבון עדיין? <button onclick="window.toggleAuthMode()" class="text-[#e50914] font-bold hover:underline">ירשם עכשיו</button>';
+        };
+
+        window.handleAuthSubmit = async (e) => {
             e.preventDefault();
             const email = document.getElementById('authEmail').value;
             const password = document.getElementById('authPassword').value;
-            const name = document.getElementById('authName').value;
-            const errDiv = document.getElementById('authError');
-            errDiv.classList.add('hidden');
 
             try {
-                if (currentAuthMode === 'register') {
-                    pendingUserCred = await createUserWithEmailAndPassword(auth, email, password);
-                    if (name) {
-                        await updateProfile(pendingUserCred.user, { displayName: name });
-                    }
+                if (isSignUpMode) {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    showToast('🎉 החשבון נוצר בהצלחה!');
                 } else {
-                    pendingUserCred = await signInWithEmailAndPassword(auth, email, password);
+                    await signInWithEmailAndPassword(auth, email, password);
+                    showToast('👋 התחברת בהצלחה!');
                 }
-                
-                targetUserEmail = email;
-                // Mock 2FA code sending (for demo purposes)
-                generated2FACode = Math.floor(100000 + Math.random() * 900000).toString();
-                window.showToast(`קוד אימות נשלח ל-${email} (קוד לבדיקה: ${generated2FACode})`);
-                
-                document.getElementById('authStep1').classList.add('hidden');
-                document.getElementById('authStep2').classList.remove('hidden');
-            } catch (err) {
-                errDiv.innerText = "שגיאה: " + err.message;
-                errDiv.classList.remove('hidden');
-            }
-        };
-
-        window.handleAuthSubmitStep2 = (e) => {
-            e.preventDefault();
-            const code = document.getElementById('twoFactorCode').value;
-            const errDiv = document.getElementById('step2Error');
-            errDiv.classList.add('hidden');
-
-            if (code === generated2FACode || code === '123456') {
-                window.showToast('התחברת בהצלחה!');
                 window.closeAuthModal();
-                window.showProfileSelection();
-            } else {
-                errDiv.innerText = 'קוד שגוי, נסה שוב.';
-                errDiv.classList.remove('hidden');
+            } catch (err) {
+                showToast('❌ שגיאה: ' + err.message);
             }
         };
-
-        window.handleEmailLinkLogin = () => window.showToast('קישור התחברות נשלח למייל!');
-        window.handleSMSCodeSend = () => window.showToast('קוד אימות נשלח ב-SMS!');
-        window.handlePasskeyLogin = () => window.showToast('התחברות ביומטרית לא זמינה כרגע.');
 
         window.handleLogout = async () => {
-            try {
-                await signOut(auth);
-                document.getElementById('profileSelectScreen').style.display = 'none';
-                window.showToast('התנתקת בהצלחה.');
-                window.updateUserUI(null);
-                
-                // Clear favorites UI
-                document.getElementById('favoritesRow').innerHTML = '<div class="text-gray-500 text-sm py-4 w-full">הרשימה שלך ריקה. התחבר כדי לראות את הסרטים ששמרת.</div>';
-            } catch (error) {
-                window.showToast('שגיאה בהתנתקות.');
-            }
+            await signOut(auth);
+            showToast('התנתקת מהחשבון');
         };
 
-        window.updateUserUI = (user) => {
-            const loginBtn = document.getElementById('loginBtn');
-            const userInfo = document.getElementById('userInfo');
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            const userAvatar = document.getElementById('userAvatar');
-
-            if (user && !user.isAnonymous) {
-                loginBtn.classList.add('hidden');
-                userInfo.classList.remove('hidden');
-                userNameDisplay.innerText = user.displayName || user.email.split('@')[0];
-                userAvatar.innerText = (user.displayName || user.email).charAt(0).toUpperCase();
-            } else {
-                loginBtn.classList.remove('hidden');
-                userInfo.classList.add('hidden');
-            }
-        };
-
-        let currentEditingProfileId = null;
-        let profileToDeleteId = null;
-
-        window.loadUserSubProfiles = async () => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) return;
-            const profilesContainer = document.getElementById('profilesContainer');
-            profilesContainer.innerHTML = '';
-            
+        async function loadWatchProgressFromCloud() {
+            if (!currentUser) return;
             try {
-                const q = query(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profiles'));
-                const snapshot = await getDocs(q);
-                
-                if (snapshot.empty) {
-                    // Create default profile
-                    const defRef = doc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profiles'));
-                    await setDoc(defRef, { name: 'ראשי', avatar: 'bg-red-600', isKids: false, ageRating: 'all' });
-                    window.loadUserSubProfiles();
-                    return;
-                }
-
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const pId = docSnap.id;
-                    const safeName = data.name.replace(/'/g, "\\'");
-                    const safeAvatar = data.avatar || 'bg-gray-600';
-                    const isKids = data.isKids || false;
-                    const ageRating = data.ageRating || 'all';
-
-                    profilesContainer.innerHTML += `
-                        <div onclick="window.selectProfile('${safeName}')" class="profile-item-card relative group flex justify-between">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full ${safeAvatar} flex items-center justify-center text-white font-bold text-lg">
-                                    ${data.name.charAt(0)}
-                                </div>
-                                <span class="text-white font-bold">${data.name}</span>
-                            </div>
-                            <div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onclick="event.stopPropagation(); window.openEditProfile('${pId}', '${safeName}', '${safeAvatar}', ${isKids}, '${ageRating}')" class="text-gray-400 hover:text-blue-400 p-1 transition" title="ערוך">
-                                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                                </button>
-                                <button onclick="event.stopPropagation(); window.openDeleteConfirm('${pId}', '${safeName}')" class="text-gray-400 hover:text-red-500 p-1 transition" title="מחק">
-                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                const querySnapshot = await getDocs(collection(db, `users/${currentUser.uid}/watchProgress`));
+                cloudWatchProgress = {};
+                querySnapshot.forEach((docSnap) => {
+                    cloudWatchProgress[docSnap.id] = docSnap.data();
                 });
-                lucide.createIcons();
-            } catch (e) {
-                console.error("Error loading profiles:", e);
+                renderContinueWatchingRow();
+            } catch (err) {
+                console.error("Error loading cloud progress:", err);
             }
-        };
+        }
 
-        window.showProfileSelection = () => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
-                window.openAuthModal();
-                return;
-            }
-            document.getElementById('profileSelectScreen').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-        };
-
-        window.selectProfile = (name) => {
-            window.showToast(`מתחבר לפרופיל: ${name}`);
-            document.getElementById('profileSelectScreen').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        };
-
-        const avatarOptions = [
-            { id: 'bg-red-600', icon: 'User', color: 'bg-red-600' },
-            { id: 'bg-blue-600', icon: 'Smile', color: 'bg-blue-600' },
-            { id: 'bg-green-600', icon: 'Bot', color: 'bg-green-600' },
-            { id: 'bg-purple-600', icon: 'Ghost', color: 'bg-purple-600' },
-            { id: 'bg-yellow-500', icon: 'Star', color: 'bg-yellow-500' }
-        ];
-        let selectedAvatarId = avatarOptions[0].id;
-
-        window.addNewSubProfile = () => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) return;
+        async function saveProgressToCloud(movieId, currentTime, duration) {
+            if (!currentUser || !movieId || duration <= 0) return;
+            const percent = Math.min(100, (currentTime / duration) * 100);
             
-            currentEditingProfileId = null;
-            document.getElementById('profileModalTitle').innerText = 'יצירת פרופיל צופה';
-            
-            // Reset form
-            document.getElementById('newProfileName').value = '';
-            document.getElementById('kidsModeToggle').checked = false;
-            document.getElementById('ageRatingSelect').value = 'all';
-            document.getElementById('ageRatingSelect').disabled = false;
-            document.getElementById('ageRatingSelect').classList.remove('opacity-50');
-            
-            // Render avatars
-            const grid = document.getElementById('avatarSelectionGrid');
-            grid.innerHTML = '';
-            avatarOptions.forEach(opt => {
-                const isSelected = opt.id === selectedAvatarId;
-                grid.innerHTML += `
-                    <div onclick="window.selectAvatarForm('${opt.id}')" id="avatar-opt-${opt.id}" class="avatar-option w-14 h-14 rounded-full ${opt.color} flex items-center justify-center text-white ${isSelected ? 'selected' : ''}">
-                        <i data-lucide="${opt.icon.toLowerCase()}" class="w-7 h-7"></i>
-                    </div>
-                `;
-            });
-            lucide.createIcons();
+            const progressData = {
+                movieId: movieId,
+                currentTime: currentTime,
+                duration: duration,
+                percent: percent,
+                updatedAt: serverTimestamp()
+            };
 
-            document.getElementById('createProfileModal').classList.remove('hidden');
-        };
-
-        window.openEditProfile = (id, name, avatar, isKids, ageRating) => {
-            currentEditingProfileId = id;
-            document.getElementById('profileModalTitle').innerText = 'עריכת פרופיל צופה';
-            
-            document.getElementById('newProfileName').value = name;
-            document.getElementById('kidsModeToggle').checked = isKids;
-            document.getElementById('ageRatingSelect').value = ageRating;
-            
-            if(isKids) {
-                document.getElementById('ageRatingSelect').disabled = true;
-                document.getElementById('ageRatingSelect').classList.add('opacity-50');
-            } else {
-                document.getElementById('ageRatingSelect').disabled = false;
-                document.getElementById('ageRatingSelect').classList.remove('opacity-50');
-            }
-
-            selectedAvatarId = avatar;
-            const grid = document.getElementById('avatarSelectionGrid');
-            grid.innerHTML = '';
-            avatarOptions.forEach(opt => {
-                const isSelected = opt.id === selectedAvatarId;
-                grid.innerHTML += `
-                    <div onclick="window.selectAvatarForm('${opt.id}')" id="avatar-opt-${opt.id}" class="avatar-option w-14 h-14 rounded-full ${opt.color} flex items-center justify-center text-white ${isSelected ? 'selected' : ''}">
-                        <i data-lucide="${opt.icon.toLowerCase()}" class="w-7 h-7"></i>
-                    </div>
-                `;
-            });
-            lucide.createIcons();
-
-            document.getElementById('createProfileModal').classList.remove('hidden');
-        };
-
-        window.closeCreateProfileModal = () => {
-            document.getElementById('createProfileModal').classList.add('hidden');
-        };
-
-        window.toggleKidsMode = () => {
-            const isKids = document.getElementById('kidsModeToggle').checked;
-            const select = document.getElementById('ageRatingSelect');
-            if (isKids) {
-                select.value = '7'; // Limit to 7+ max by default when checked
-                select.disabled = true;
-                select.classList.add('opacity-50');
-            } else {
-                select.disabled = false;
-                select.classList.remove('opacity-50');
-            }
-        };
-
-        window.selectAvatarForm = (id) => {
-            selectedAvatarId = id;
-            document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-            document.getElementById(`avatar-opt-${id}`).classList.add('selected');
-        };
-
-        window.saveNewProfile = async () => {
-            const name = document.getElementById('newProfileName').value.trim();
-            if (!name) {
-                window.showToast("יש להזין שם פרופיל");
-                return;
-            }
-            
-            const isKids = document.getElementById('kidsModeToggle').checked;
-            const ageRating = document.getElementById('ageRatingSelect').value;
+            cloudWatchProgress[movieId] = progressData;
 
             try {
-                if (currentEditingProfileId) {
-                    const docRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profiles', currentEditingProfileId);
-                    await updateDoc(docRef, { 
-                        name: name, 
-                        avatar: selectedAvatarId,
-                        isKids: isKids,
-                        ageRating: ageRating
-                    });
-                    window.showToast("הפרופיל עודכן בהצלחה");
-                } else {
-                    const newRef = doc(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profiles'));
-                    await setDoc(newRef, { 
-                        name: name, 
-                        avatar: selectedAvatarId,
-                        isKids: isKids,
-                        ageRating: ageRating
-                    });
-                    window.showToast("נוסף פרופיל חדש בהצלחה");
-                }
-                
-                window.loadUserSubProfiles();
-                window.closeCreateProfileModal();
-            } catch(e) {
-                window.showToast("שגיאה בשמירת הפרופיל");
+                await setDoc(doc(db, `users/${currentUser.uid}/watchProgress`, movieId), progressData);
+                renderContinueWatchingRow();
+            } catch (err) {
+                console.warn("Cloud save warning:", err);
             }
-        };
+        }
 
-        window.openDeleteConfirm = (id, name) => {
-            profileToDeleteId = id;
-            document.getElementById('deleteProfileName').innerText = name;
-            document.getElementById('deleteConfirmModal').classList.remove('hidden');
-            lucide.createIcons();
-        };
-
-        window.closeDeleteConfirm = () => {
-            profileToDeleteId = null;
-            document.getElementById('deleteConfirmModal').classList.add('hidden');
-        };
-
-        window.executeDeleteProfile = async () => {
-            if (!profileToDeleteId) return;
-            try {
-                const docRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profiles', profileToDeleteId);
-                await deleteDoc(docRef);
-                window.showToast("הפרופיל נמחק בהצלחה");
-                window.closeDeleteConfirm();
-                window.loadUserSubProfiles();
-            } catch(e) {
-                window.showToast("שגיאה במחיקת הפרופיל");
-            }
-        };
-
-        const movies = {
-            publicDomain: [
-                { id: 'pd1', title: 'Night of the Living Dead', year: 1968, img: 'https://upload.wikimedia.org/wikipedia/commons/e/ea/Night_of_the_Living_Dead_%281968%29_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'pd2', title: 'His Girl Friday', year: 1940, img: 'https://upload.wikimedia.org/wikipedia/commons/4/43/His_Girl_Friday_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'pd3', title: 'Charade', year: 1963, img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Charade_%281963_poster%29.jpg/800px-Charade_%281963_poster%29.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' }
-            ],
-            family: [
-                { id: 'f1', title: 'Big Buck Bunny', year: 2008, img: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_buck_bunny_poster_big.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'f2', title: 'Sintel', year: 2010, img: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Sintel_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'f3', title: 'Elephants Dream', year: 2006, img: 'https://upload.wikimedia.org/wikipedia/commons/e/e8/Elephants_Dream_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' }
-            ],
-            action: [
-                { id: 'a1', title: 'Tears of Steel', year: 2012, img: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'a2', title: 'Cosmos Laundromat', year: 2015, img: 'https://upload.wikimedia.org/wikipedia/commons/4/43/Cosmos_laundromat_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' },
-                { id: 'a3', title: 'Spring', year: 2019, img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Spring_Blender_Open_Movie_poster.jpg/800px-Spring_Blender_Open_Movie_poster.jpg', video: 'https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd' }
-            ]
-        };
-
-        const renderMovies = (containerId, movieList, categoryKey = 'action') => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
+        function renderContinueWatchingRow() {
+            const container = document.getElementById('continueWatchingRow');
+            const section = document.getElementById('continueWatchingSection');
             container.innerHTML = '';
-            movieList.forEach(movie => {
-                container.innerHTML += `
-                    <div class="movie-card relative min-w-[200px] w-[200px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0" onclick="window.playMovieDirectly('${movie.video}', '${movie.title}', true, true, '${categoryKey}')">
-                        <img src="${movie.img}" alt="${movie.title}" class="w-full h-[300px] object-cover" onerror="this.src='https://placehold.co/200x300/141414/e50914?text=SmartStream'">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+
+            const inProgressMovies = Object.values(cloudWatchProgress).filter(p => p.percent > 2 && p.percent < 95);
+
+            if (inProgressMovies.length === 0) {
+                section.classList.add('hidden');
+                return;
+            }
+
+            section.classList.remove('hidden');
+
+            inProgressMovies.forEach(item => {
+                const movie = moviesCatalog[item.movieId];
+                if (!movie) return;
+
+                const cardHtml = `
+                    <div class="movie-card relative min-w-[200px] w-[200px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0" onclick="window.openMovieDetails('${movie.id}')">
+                        <img src="${movie.img}" alt="${movie.title}" class="w-full h-[280px] object-cover">
+                        <div class="card-progress-bar">
+                            <div class="card-progress-fill" style="width: ${item.percent}%;"></div>
+                        </div>
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                             <h4 class="text-white font-bold text-sm mb-1">${movie.title}</h4>
-                            <span class="text-gray-400 text-xs">${movie.year}</span>
-                            <button onclick="event.stopPropagation(); window.toggleFavoriteCloud('${movie.id}', '${movie.title}', '${movie.img}', '${movie.video}', true, true)" class="mt-2 bg-[#e50914] text-white text-xs font-bold py-1.5 rounded flex items-center justify-center gap-1 hover:bg-red-700 transition shadow-lg">
-                                <i data-lucide="plus" class="w-3 h-3"></i> הוסף לרשימה
+                            <span class="text-xs text-red-400 font-bold mb-2">נשארו ${Math.ceil((item.duration - item.currentTime) / 60)} דק'</span>
+                            <button class="bg-[#e50914] text-white text-xs font-bold py-1.5 rounded flex items-center justify-center gap-1">
+                                <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> המשך
                             </button>
                         </div>
                     </div>
                 `;
+                container.innerHTML += cardHtml;
             });
+            lucide.createIcons();
+        }
+
+        window.selectedMovieDetailsId = null;
+        window.openMovieDetails = (movieId) => {
+            const movie = moviesCatalog[movieId];
+            if (!movie) return;
+
+            window.selectedMovieDetailsId = movieId;
+            
+            document.getElementById('detailsHeroImg').src = movie.img;
+            document.getElementById('detailsTitle').innerText = movie.title;
+            document.getElementById('detailsYear').innerText = movie.year;
+            document.getElementById('detailsCategoryBadge').innerText = movie.category;
+            document.getElementById('detailsFormat').innerText = movie.isDash ? 'DASH STREAM' : 'MP4 / HD';
+            document.getElementById('detailsSynopsis').innerText = movie.synopsis;
+            document.getElementById('detailsDirector').innerText = movie.director;
+            document.getElementById('detailsLicense').innerText = movie.license;
+
+            const cloudData = cloudWatchProgress[movieId];
+            const savedTime = cloudData ? cloudData.currentTime : 0;
+            const percent = cloudData ? cloudData.percent : 0;
+
+            const resumeProgressBar = document.getElementById('resumeProgressBar');
+            const resumeBtnText = document.getElementById('resumeBtnText');
+            
+            if (savedTime > 5 && percent < 95) {
+                resumeProgressBar.style.width = `${percent}%`;
+                resumeBtnText.innerText = `המשך צפייה (${Math.floor(savedTime / 60)} דק')`;
+            } else {
+                resumeProgressBar.style.width = '0%';
+                resumeBtnText.innerText = 'התחל לצפות';
+            }
+
+            document.getElementById('movieDetailsModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
             lucide.createIcons();
         };
 
-        let player = null;
-        const videoEl = document.getElementById('mainVideo');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const progressBar = document.getElementById('progressBar');
-        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
-        const durationDisplay = document.getElementById('durationDisplay');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const customPlayer = document.getElementById('customPlayer');
-        let controlsTimeout;
+        window.closeMovieDetails = () => {
+            document.getElementById('movieDetailsModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
 
-        let endScreenTriggered = false;
-        let currentMovieCategory = 'action';
-        let currentMovieTitle = '';
+        window.startMovieFromDetails = (startFromBeginning = false) => {
+            const movie = moviesCatalog[window.selectedMovieDetailsId];
+            if (!movie) return;
 
-        window.playMovieDirectly = (url, title, isDash = true, autoPlay = true, categoryKey = 'action') => {
-            currentMovieTitle = title;
-            currentMovieCategory = categoryKey;
-            endScreenTriggered = false;
-            
-            // Reset player UI
-            videoEl.classList.remove('video-shrunk');
-            document.getElementById('videoControls').style.display = 'flex';
-            document.getElementById('playerTopBar').style.display = 'flex';
-            
-            const overlay = document.getElementById('postMovieOverlay');
-            if(overlay) {
-                overlay.classList.add('hidden', 'opacity-0');
-                document.getElementById('ratingSection').classList.remove('hidden', 'opacity-0');
-                document.getElementById('recsSection').classList.add('hidden');
+            window.closeMovieDetails();
+
+            let startTime = 0;
+            if (!startFromBeginning && cloudWatchProgress[movie.id]) {
+                startTime = cloudWatchProgress[movie.id].currentTime;
             }
 
+            window.playMovieDirectly(movie.video, movie.title, movie.isDash, true, startTime, movie.id);
+        };
+
+        /* נגן וידאו מותאם אישית */
+        let player = null;
+        let activeMovieId = null;
+        let lastSaveTime = 0;
+        const videoEl = document.getElementById('mainVideo');
+        const customPlayer = document.getElementById('customPlayer');
+
+        window.playMovieDirectly = (url, title, isDash = null, autoPlay = true, startTime = 0, movieId = null) => {
+            activeMovieId = movieId;
+            hasShownPostPlay = false;
+            
+            customPlayer.classList.remove('pip-mode');
+            document.getElementById('postPlayModal').classList.add('hidden');
+            document.getElementById('postPlayRecContainer').classList.add('hidden');
             document.getElementById('playerMovieTitle').innerText = title;
             customPlayer.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-            document.getElementById('playerBuffering').classList.add('active');
-            
-            if (isDash && typeof dashjs !== 'undefined') {
-                if (player) player.destroy();
+
+            const isDashSource = (isDash === true) || (isDash === null && url.includes('.mpd'));
+
+            if (isDashSource && typeof dashjs !== 'undefined') {
+                if (player) { player.destroy(); player = null; }
                 player = dashjs.MediaPlayer().create();
                 player.initialize(videoEl, url, autoPlay);
+                if (startTime > 0) player.seek(startTime);
             } else {
+                if (player) { player.destroy(); player = null; }
                 videoEl.src = url;
-                if(autoPlay) videoEl.play();
+                if (startTime > 0) videoEl.currentTime = startTime;
+                if (autoPlay) videoEl.play().catch(err => console.warn(err));
             }
+
+            // הפעלת כתוביות ברירת מחדל
+            setTimeout(() => {
+                window.setSubtitleTrack('he');
+            }, 500);
+
+            updatePlayPauseIcon();
         };
 
         window.closePlayer = () => {
-            customPlayer.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            
-            // Reset UI for next time
-            videoEl.classList.remove('video-shrunk');
-            document.getElementById('videoControls').style.display = 'flex';
-            document.getElementById('playerTopBar').style.display = 'flex';
-            document.getElementById('postMovieOverlay').classList.add('hidden', 'opacity-0');
-
-            if (player) {
-                player.destroy();
-                player = null;
+            if (activeMovieId && videoEl.currentTime > 0) {
+                saveProgressToCloud(activeMovieId, videoEl.currentTime, videoEl.duration);
             }
+            customPlayer.classList.remove('pip-mode');
+            customPlayer.style.display = 'none';
+            document.getElementById('postPlayModal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            if (player) { player.destroy(); player = null; }
             videoEl.pause();
             videoEl.src = '';
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(e => console.log(e));
-            }
         };
 
-        const formatTime = (seconds) => {
-            if (isNaN(seconds)) return "00:00";
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        window.replayMovie = () => {
+            customPlayer.classList.remove('pip-mode');
+            document.getElementById('postPlayModal').classList.add('hidden');
+            document.getElementById('postPlayRecContainer').classList.add('hidden');
+            videoEl.currentTime = 0;
+            videoEl.play();
+            hasShownPostPlay = false;
         };
 
-        playPauseBtn.addEventListener('click', () => {
+        window.rateMovieWithEmoji = (emoji, label) => {
+            showToast(`תודה! דירגת "${label}" ${emoji}`);
+            
+            // הצגת ההמלצות באנימציה מרהיבה לאחר הדירוג
+            const recContainer = document.getElementById('postPlayRecContainer');
+            recContainer.classList.remove('hidden');
+            recContainer.classList.add('animated-recommendations');
+        };
+
+        function showPostPlayScreen(movieId) {
+            const movie = moviesCatalog[movieId];
+            if (!movie) return;
+
+            document.getElementById('postPlayMovieTitle').innerText = `מה דעתך על ${movie.title}?`;
+            document.getElementById('postPlayPosterImg').src = movie.img;
+            
+            // אפקט כיווץ הנגן בפינה
+            customPlayer.classList.add('pip-mode');
+
+            // טעינת רשימת המלצות עשירה
+            const recRow = document.getElementById('postPlayRecommendationsRow');
+            recRow.innerHTML = '';
+
+            Object.values(moviesCatalog).forEach(m => {
+                if (m.id !== movieId) {
+                    recRow.innerHTML += `
+                        <div class="movie-card relative min-w-[150px] w-[150px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0 border border-white/10" onclick="window.playMovieDirectly('${m.video}', '${m.title}', ${m.isDash}, true, 0, '${m.id}')">
+                            <img src="${m.img}" alt="${m.title}" class="w-full h-[210px] object-cover">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                                <h5 class="text-white font-bold text-xs mb-1">${m.title}</h5>
+                                <span class="text-[10px] text-red-400 font-bold flex items-center gap-1">
+                                    <i data-lucide="play" class="w-3 h-3 fill-current"></i> צפה עכשיו
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            document.getElementById('postPlayModal').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        window.togglePlayPause = () => {
             if (videoEl.paused) videoEl.play();
             else videoEl.pause();
-        });
+            updatePlayPauseIcon();
+        };
 
-        videoEl.addEventListener('play', () => {
-            playPauseBtn.innerHTML = '<i data-lucide="pause" class="w-8 h-8 fill-current"></i>';
+        function updatePlayPauseIcon() {
+            const btn = document.getElementById('playPauseBtn');
+            btn.innerHTML = videoEl.paused 
+                ? '<i data-lucide="play" class="w-8 h-8 fill-current"></i>' 
+                : '<i data-lucide="pause" class="w-8 h-8 fill-current"></i>';
             lucide.createIcons();
-            document.getElementById('playerBuffering').classList.remove('active');
-        });
-        videoEl.addEventListener('pause', () => {
-            playPauseBtn.innerHTML = '<i data-lucide="play" class="w-8 h-8 fill-current"></i>';
-            lucide.createIcons();
-        });
-        videoEl.addEventListener('waiting', () => {
-            document.getElementById('playerBuffering').classList.add('active');
-        });
-        videoEl.addEventListener('playing', () => {
-            document.getElementById('playerBuffering').classList.remove('active');
-        });
+        }
 
-        videoEl.addEventListener('timeupdate', () => {
-            const duration = videoEl.duration;
-            const current = videoEl.currentTime;
-            const p = (current / duration) * 100;
-            
-            progressBar.value = p || 0;
-            currentTimeDisplay.innerText = formatTime(current);
-            durationDisplay.innerText = formatTime(duration);
+        window.skipTime = (seconds) => {
+            videoEl.currentTime = Math.max(0, Math.min(videoEl.duration, videoEl.currentTime + seconds));
+        };
 
-            // Credits logic: 30 seconds left triggers the overlay
-            if (duration > 0 && (duration - current) <= 30 && !endScreenTriggered) {
-                window.triggerPostMovieExperience();
-            }
-        });
-
-        progressBar.addEventListener('input', (e) => {
-            const time = (e.target.value / 100) * videoEl.duration;
-            videoEl.currentTime = time;
-        });
-
-        document.getElementById('rewindBtn').addEventListener('click', () => videoEl.currentTime -= 10);
-        document.getElementById('forwardBtn').addEventListener('click', () => videoEl.currentTime += 10);
-
-        volumeSlider.addEventListener('input', (e) => {
-            videoEl.volume = e.target.value;
-            videoEl.muted = e.target.value === '0';
-        });
-        document.getElementById('muteBtn').addEventListener('click', () => {
+        window.toggleMute = () => {
             videoEl.muted = !videoEl.muted;
-            volumeSlider.value = videoEl.muted ? 0 : videoEl.volume || 1;
+            document.getElementById('volumeBtn').innerHTML = videoEl.muted 
+                ? '<i data-lucide="volume-x" class="w-6 h-6 text-red-500"></i>' 
+                : '<i data-lucide="volume-2" class="w-6 h-6"></i>';
+            lucide.createIcons();
+        };
+
+        document.getElementById('volumeBar').addEventListener('input', (e) => {
+            videoEl.volume = e.target.value;
+            videoEl.muted = e.target.value == 0;
         });
 
-        document.getElementById('speedBtn').addEventListener('click', (e) => {
-            let speed = videoEl.playbackRate;
-            if (speed === 1) speed = 1.25;
-            else if (speed === 1.25) speed = 1.5;
-            else if (speed === 1.5) speed = 2;
-            else speed = 1;
+        window.toggleSpeedMenu = () => document.getElementById('speedMenuModal').classList.toggle('hidden');
+        window.setPlaybackSpeed = (speed) => {
             videoEl.playbackRate = speed;
-            e.target.innerText = speed + 'x';
-        });
+            document.getElementById('currentSpeedLabel').innerText = `${speed}x`;
+            document.getElementById('speedMenuModal').classList.add('hidden');
+        };
 
-        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+        window.toggleFullscreen = () => {
             if (!document.fullscreenElement) {
-                customPlayer.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
-                });
+                customPlayer.requestFullscreen().catch(err => console.warn(err));
             } else {
                 document.exitFullscreen();
             }
+        };
+
+        videoEl.addEventListener('timeupdate', () => {
+            const current = videoEl.currentTime;
+            const duration = videoEl.duration;
+
+            document.getElementById('progressBar').value = (current / duration) * 100 || 0;
+            document.getElementById('currentTimeDisplay').innerText = formatTime(current);
+            document.getElementById('durationDisplay').innerText = formatTime(duration);
+
+            // זיהוי הגעה לקרדיטים (ב-30 השניות האחרונות בסרט)
+            if (activeMovieId && !hasShownPostPlay && duration > 30 && (duration - current <= 30)) {
+                hasShownPostPlay = true;
+                showPostPlayScreen(activeMovieId);
+            }
+
+            if (activeMovieId && Math.abs(current - lastSaveTime) > 5) {
+                lastSaveTime = current;
+                saveProgressToCloud(activeMovieId, current, duration);
+            }
         });
 
-        const resetControlsTimeout = () => {
-            document.getElementById('videoControls').style.opacity = '1';
-            document.getElementById('playerTopBar').style.opacity = '1';
-            customPlayer.style.cursor = 'default';
-            clearTimeout(controlsTimeout);
-            controlsTimeout = setTimeout(() => {
-                if (!videoEl.paused) {
-                    document.getElementById('videoControls').style.opacity = '0';
-                    document.getElementById('playerTopBar').style.opacity = '0';
-                    customPlayer.style.cursor = 'none';
-                }
-            }, 3000);
-        };
-
-        customPlayer.addEventListener('mousemove', resetControlsTimeout);
-        customPlayer.addEventListener('click', resetControlsTimeout);
-        videoEl.addEventListener('playing', resetControlsTimeout);
-
-        window.triggerPostMovieExperience = () => {
-            endScreenTriggered = true;
-            
-            // Shrink video to top left (RTL -> physically left side usually, but top-left by CSS rules)
-            videoEl.classList.add('video-shrunk');
-            
-            // Hide normal controls
-            document.getElementById('videoControls').style.display = 'none';
-            document.getElementById('playerTopBar').style.display = 'none';
-            
-            // Show overlay
-            const overlay = document.getElementById('postMovieOverlay');
-            overlay.classList.remove('hidden');
-            setTimeout(() => overlay.classList.remove('opacity-0'), 100); // Trigger transition
-        };
-
-        window.submitRating = (rating) => {
-            // Here you would save the rating to Firebase DB. For UI purposes we just proceed:
-            window.showToast('הדירוג שלך נשמר. תודה!');
-            
-            // Transition to recommendations
-            const ratingSec = document.getElementById('ratingSection');
-            const recsSec = document.getElementById('recsSection');
-            
-            ratingSec.classList.add('opacity-0');
-            setTimeout(() => {
-                ratingSec.classList.add('hidden');
-                recsSec.classList.remove('hidden');
-                window.generatePostMovieRecommendations();
-                // Little delay to allow display:block to apply before animating opacity if we had one
-            }, 500);
-        };
-
-        window.generatePostMovieRecommendations = () => {
-            const container = document.getElementById('postMovieRecsContainer');
-            container.innerHTML = '';
-            
-            // Prefer the same category, exclude current movie
-            let candidates = movies[currentMovieCategory] || movies.action;
-            candidates = candidates.filter(m => m.title !== currentMovieTitle);
-            
-            // If not enough candidates, mix in others
-            if (candidates.length < 3) {
-                const otherKeys = Object.keys(movies).filter(k => k !== currentMovieCategory);
-                otherKeys.forEach(k => {
-                    candidates = candidates.concat(movies[k]);
-                });
+        videoEl.addEventListener('ended', () => {
+            if (activeMovieId && !hasShownPostPlay) {
+                hasShownPostPlay = true;
+                showPostPlayScreen(activeMovieId);
             }
-            
-            // Take up to 3 recommendations
-            const finalRecs = candidates.slice(0, 3);
-            
-            finalRecs.forEach(movie => {
-                container.innerHTML += `
-                    <div class="movie-card relative min-w-[200px] w-[200px] md:w-[220px] rounded-lg overflow-hidden cursor-pointer group shrink-0" onclick="window.playMovieDirectly('${movie.video}', '${movie.title}', true, true, '${currentMovieCategory}')">
-                        <img src="${movie.img}" alt="${movie.title}" class="w-full h-[300px] md:h-[330px] object-cover" onerror="this.src='https://placehold.co/200x300/141414/e50914?text=SmartStream'">
+        });
+
+        document.getElementById('progressBar').addEventListener('input', (e) => {
+            const targetTime = (e.target.value / 100) * videoEl.duration;
+            videoEl.currentTime = targetTime;
+        });
+
+        const formatTime = (s) => isNaN(s) ? "00:00" : `${Math.floor(s / 60).toString().padStart(2, '0')}:${Math.floor(s % 60).toString().padStart(2, '0')}`;
+
+        window.togglePictureInPicture = async () => {
+            if (document.pictureInPictureElement) await document.exitPictureInPicture();
+            else if (document.pictureInPictureEnabled) await videoEl.requestPictureInPicture();
+        };
+
+        window.toggleCCMenu = () => document.getElementById('ccMenuModal').classList.toggle('hidden');
+        
+        window.setSubtitleTrack = (lang) => {
+            const tracks = videoEl.textTracks;
+            for (let i = 0; i < tracks.length; i++) {
+                if (lang === 'off') {
+                    tracks[i].mode = 'disabled';
+                } else {
+                    tracks[i].mode = (tracks[i].language === lang) ? 'showing' : 'hidden';
+                }
+            }
+            document.getElementById('ccMenuModal').classList.add('hidden');
+            if (lang !== 'off') {
+                showToast(`כתוביות הופעלו: ${lang === 'he' ? 'עברית 🇮🇱' : 'אנגלית 🇺🇸'}`);
+            } else {
+                showToast('כתוביות כובו');
+            }
+        };
+
+        const renderCategories = () => {
+            const pdRow = document.getElementById('publicDomainRow');
+            const famRow = document.getElementById('familyRow');
+
+            Object.values(moviesCatalog).forEach(movie => {
+                const cardHtml = `
+                    <div class="movie-card relative min-w-[200px] w-[200px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0" onclick="window.openMovieDetails('${movie.id}')">
+                        <img src="${movie.img}" alt="${movie.title}" class="w-full h-[280px] object-cover">
                         <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                            <h4 class="text-white font-bold text-sm mb-2">${movie.title}</h4>
-                            <div class="bg-[#e50914] text-white text-xs font-bold py-1.5 rounded flex items-center justify-center gap-2 hover:bg-red-700 transition">
-                                <i data-lucide="play" class="w-3 h-3 fill-white"></i> נגן עכשיו
-                            </div>
+                            <h4 class="text-white font-bold text-sm mb-1">${movie.title}</h4>
+                            <span class="text-gray-400 text-xs mb-2">${movie.year}</span>
+                            <button class="bg-[#e50914] text-white text-xs font-bold py-1.5 rounded flex items-center justify-center gap-1">
+                                <i data-lucide="info" class="w-3.5 h-3.5"></i> פרטי הסרט
+                            </button>
                         </div>
                     </div>
                 `;
+                if (movie.id.startsWith('pd')) pdRow.innerHTML += cardHtml;
+                else famRow.innerHTML += cardHtml;
             });
             lucide.createIcons();
         };
 
-        window.toggleFavoriteCloud = async (id, title, img, video, isDash, autoPlay) => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
-                window.openAuthModal('login');
-                window.showToast('יש להתחבר כדי לשמור סרטים בענן');
-                return;
-            }
-
-            try {
-                const favRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'favorites', id);
-                const favDoc = await getDoc(favRef);
-                
-                if (favDoc.exists()) {
-                    await deleteDoc(favRef);
-                    window.showToast(`הוסר מהרשימה: ${title}`);
-                } else {
-                    await setDoc(favRef, { id, title, img, video, isDash, autoPlay });
-                    window.showToast(`נשמר בהצלחה ברשימה: ${title}`);
-                }
-                window.loadFavoritesFromCloud();
-            } catch(e) {
-                console.error("Error saving favorite:", e);
-                window.showToast('שגיאה בשמירת הסרט');
-            }
-        };
-
-        window.loadFavoritesFromCloud = async () => {
-            if (!auth.currentUser || auth.currentUser.isAnonymous) {
-                document.getElementById('favoritesRow').innerHTML = '<div class="text-gray-500 text-sm py-4 w-full">הרשימה שלך ריקה. התחבר כדי לראות את הסרטים ששמרת.</div>';
-                return;
-            }
-            const container = document.getElementById('favoritesRow');
-            
-            try {
-                const q = query(collection(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'favorites'));
-                const snapshot = await getDocs(q);
-                
-                if (snapshot.empty) {
-                    container.innerHTML = '<div class="text-gray-500 text-sm py-4 w-full">הרשימה שלך ריקה. שמור סרטים כדי לצפות בהם מאוחר יותר.</div>';
-                    return;
-                }
-                
-                container.innerHTML = '';
-                snapshot.forEach(docSnap => {
-                    const movie = docSnap.data();
-                    container.innerHTML += `
-                        <div class="movie-card relative min-w-[200px] w-[200px] rounded-lg overflow-hidden cursor-pointer group flex-shrink-0" onclick="window.playMovieDirectly('${movie.video}', '${movie.title}', ${movie.isDash}, ${movie.autoPlay})">
-                            <img src="${movie.img}" alt="${movie.title}" class="w-full h-[300px] object-cover" onerror="this.src='https://placehold.co/200x300/141414/e50914?text=SmartStream'">
-                            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                                <h4 class="text-white font-bold text-sm mb-1">${movie.title}</h4>
-                                <button onclick="event.stopPropagation(); window.toggleFavoriteCloud('${movie.id}', '${movie.title}', '', '', false, false)" class="mt-2 bg-red-600/80 text-white text-xs font-bold py-1.5 rounded flex items-center justify-center gap-1 hover:bg-red-700 transition shadow-lg">
-                                    <i data-lucide="minus" class="w-3 h-3"></i> הסר מהרשימה
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                lucide.createIcons();
-            } catch (e) {
-                console.error("Error loading favorites:", e);
-            }
-        };
-
         window.addEventListener('DOMContentLoaded', () => {
-            renderMovies('publicDomainRow', movies.publicDomain, 'publicDomain');
-            renderMovies('familyRow', movies.family, 'family');
-            renderMovies('actionRow', movies.action, 'action');
-            lucide.createIcons();
-
-            // Intro Sequence Logic
+            renderCategories();
             setTimeout(() => {
-                document.getElementById('bufferingState').classList.add('opacity-0');
+                document.getElementById('bufferingState')?.classList.add('hidden');
+                const cssIntro = document.getElementById('cssIntroState');
+                cssIntro?.classList.remove('hidden');
+                setTimeout(() => cssIntro?.classList.remove('opacity-0', 'scale-[0.8]'), 50);
                 setTimeout(() => {
-                    document.getElementById('bufferingState').classList.add('hidden');
-                    const cssIntro = document.getElementById('cssIntroState');
-                    cssIntro.classList.remove('hidden');
-                    setTimeout(() => {
-                        cssIntro.classList.remove('opacity-0', 'scale-[0.8]');
-                        cssIntro.classList.add('scale-110');
-                    }, 50);
-                    
-                    setTimeout(() => {
-                        document.getElementById('introScreen').classList.add('opacity-0');
-                        document.body.style.overflow = 'auto'; // release scroll lock
-                        setTimeout(() => {
-                            document.getElementById('introScreen').style.display = 'none';
-                        }, 1000);
-                    }, 2500);
-                }, 500);
-            }, 1500);
+                    document.getElementById('introScreen').style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }, 1500);
+            }, 800);
         });
-
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('navbar');
-            if (window.scrollY > 50) nav.classList.add('nav-scrolled');
-            else nav.classList.remove('nav-scrolled');
-        });
-
     </script>
 </body>
 </html>
+
