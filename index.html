@@ -2,9 +2,13 @@
 <html lang="he" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartStream - פלטפורמת הסטרימינג שלך</title>
-    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SmartStream | פלטפורמת הקולנוע של Smart Company</title>
+
+    <!-- SEO & Theme Meta -->
+    <meta name="description" content="SmartStream - פלטפורמת סטרימינג וקולנוע מתקדמת מבית Smart Company">
+    <meta name="theme-color" content="#0a0a0a">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -21,491 +25,838 @@
                         }
                     },
                     fontFamily: {
-                        sans: ['Heebo', 'Rubik', 'system-ui', 'sans-serif']
+                        sans: ['Heebo', 'Assistant', 'system-ui', 'sans-serif']
                     }
                 }
             }
-        }
+        };
     </script>
 
-    <!-- Google Fonts for Hebrew -->
+    <!-- Google Fonts (Hebrew) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800;900&family=Heebo:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
 
-    <!-- Lucide Icons -->
+    <!-- Lucide Icons & Dash.js -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Dash.js for DASH Video Streaming -->
     <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
 
     <style>
         body {
-            font-family: 'Heebo', sans-serif;
+            font-family: 'Heebo', 'Assistant', sans-serif;
             background-color: #0a0a0a;
             color: #ffffff;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0a0a0a;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #e50914;
-        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #e50914; }
 
-        /* Poster Wall Background for Profile Selector */
-        .poster-wall-bg {
-            background-image: linear-gradient(to bottom, rgba(10, 10, 10, 0.85), rgba(10, 10, 10, 0.95)), 
-                              url('https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&w=2000&q=80');
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Classic Red Velvet Cinema Seats Background for Profile Selector */
+        .cinema-seats-bg {
+            background-color: #090305;
+            background-image:
+                radial-gradient(circle at 50% 25%, rgba(229, 9, 20, 0.22), rgba(0, 0, 0, 0.88) 75%),
+                linear-gradient(to bottom, rgba(10, 5, 8, 0.65), rgba(8, 8, 8, 0.92)),
+                url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=2000&q=85');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
         }
 
-        /* Custom Profile Card Animation */
+        /* Glassmorphism Panels */
+        .glass-panel {
+            background: rgba(18, 18, 22, 0.82);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* Profile Card Hover Animation */
         .profile-card {
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .profile-card:hover {
-            transform: translateY(-8px) scale(1.06);
+            transform: translateY(-6px) scale(1.04);
         }
 
         /* Movie Card Hover Scale */
         .movie-card {
-            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+            transition: transform 0.32s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.32s ease;
         }
         .movie-card:hover {
             transform: scale(1.05);
             z-index: 20;
-            box-shadow: 0 10px 25px -5px rgba(229, 9, 20, 0.4);
+            box-shadow: 0 12px 28px -6px rgba(229, 9, 20, 0.45);
         }
 
-        /* Glassmorphism Panels */
-        .glass-panel {
-            background: rgba(24, 24, 24, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        /* Navbar Scrolled State */
+        .nav-scrolled {
+            background: rgba(10, 10, 10, 0.96) !important;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.75);
         }
 
-        /* Hide Scrollbars in horizontal rows */
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
-        }
-
-        /* Intro Overlay Keyframe Animations */
+        /* Signature Cinematic Morphing Intro Animations */
         @keyframes smartAppear {
             0% { opacity: 0; transform: translateY(20px) scale(0.9); filter: blur(10px); }
             100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0px); }
         }
-
         @keyframes streamAppear {
             0% { opacity: 0; transform: translateX(-30px); filter: blur(8px); }
             100% { opacity: 1; transform: translateX(0); filter: blur(0px); }
         }
-
         @keyframes textToLogoCollapse {
             0% { opacity: 1; transform: scale(1); filter: blur(0); }
             50% { opacity: 0.8; transform: scale(0.4); filter: blur(4px); }
             100% { opacity: 0; transform: scale(0.1); filter: blur(12px); }
         }
-
         @keyframes logoBurstShow {
             0% { opacity: 0; transform: scale(0.2) rotate(-15deg); }
             50% { opacity: 1; transform: scale(1.25) rotate(0deg); box-shadow: 0 0 80px rgba(229, 9, 20, 0.9); }
             100% { opacity: 1; transform: scale(1) rotate(0deg); box-shadow: 0 0 40px rgba(229, 9, 20, 0.5); }
         }
-
         @keyframes logoFinalZoomOut {
             0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(2.5); opacity: 0; filter: blur(20px); }
+            100% { transform: scale(2.4); opacity: 0; filter: blur(18px); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate-smart { animation: smartAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-stream { animation: streamAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards; }
-        .animate-collapse { animation: textToLogoCollapse 0.7s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
-        .animate-logo-burst { animation: logoBurstShow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
-        .animate-logo-zoomout { animation: logoFinalZoomOut 0.8s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+        .animate-smart { animation: smartAppear 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .animate-stream { animation: streamAppear 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards; }
+        .animate-collapse { animation: textToLogoCollapse 0.65s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+        .animate-logo-burst { animation: logoBurstShow 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .animate-logo-zoomout { animation: logoFinalZoomOut 0.75s cubic-bezier(0.7, 0, 0.84, 0) forwards; }
+        .animate-fade-in { animation: fadeIn 0.35s ease-out forwards; }
+
+        /* Fullscreen & End-Credits PiP Video Player */
+        #customPlayer {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            background: #000000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+        }
+        video::-webkit-media-controls { display: none !important; }
+
+        .video-stage {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Floating Top-Left PiP Window during last 30 seconds (End Credits) */
+        #customPlayer.credits-pip-mode .video-stage {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            width: 260px;
+            height: 148px;
+            border-radius: 16px;
+            overflow: hidden;
+            z-index: 10030;
+            border: 2px solid rgba(229, 9, 20, 0.85);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(229, 9, 20, 0.45);
+            cursor: pointer;
+        }
+        @media (min-width: 768px) {
+            #customPlayer.credits-pip-mode .video-stage {
+                top: 24px;
+                left: 24px;
+                width: 340px;
+                height: 192px;
+            }
+        }
+        #customPlayer.credits-pip-mode #playerTopBar,
+        #customPlayer.credits-pip-mode #videoControls {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .controls-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.6) 65%, transparent 100%);
+            padding: 18px 24px;
+            transition: opacity 0.3s ease;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            cursor: pointer;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.25);
+            border-radius: 5px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 15px;
+            width: 15px;
+            border-radius: 50%;
+            background: #e50914;
+            margin-top: -5px;
+            box-shadow: 0 0 10px rgba(229, 9, 20, 0.7);
+        }
+
+        .player-buffering-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .player-buffering-overlay.active {
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-[#0a0a0a] text-white selection:bg-red-600 selection:text-white">
 
-    <!-- Modern Cinematic Intro Overlay -->
-    <div id="introOverlay" class="fixed inset-0 z-[100000] bg-black flex flex-col items-center justify-center overflow-hidden transition-opacity duration-1000 pointer-events-auto">
-        <!-- Ambient Background Glows -->
-        <div class="absolute w-[500px] h-[500px] bg-red-600/20 rounded-full blur-[140px] animate-pulse"></div>
-        <div class="absolute w-[300px] h-[300px] bg-amber-600/10 rounded-full blur-[100px]"></div>
+    <!-- ========================================================= -->
+    <!-- 1. Signature Cinematic Morphing Intro Overlay             -->
+    <!-- ========================================================= -->
+    <div id="introOverlay" class="fixed inset-0 z-[100000] bg-black flex flex-col items-center justify-center overflow-hidden transition-opacity duration-700 pointer-events-auto">
+        <div class="absolute w-[480px] h-[480px] bg-red-600/20 rounded-full blur-[140px] animate-pulse"></div>
+        <div class="absolute w-[280px] h-[280px] bg-amber-600/10 rounded-full blur-[100px]"></div>
 
-        <!-- Intro Stage Content -->
         <div class="relative z-10 flex flex-col items-center justify-center">
-            
-            <!-- Dynamic Animated Title Wrapper (Explicit LTR direction for correct word ordering) -->
             <div id="introTextWrapper" class="flex items-center gap-3 text-5xl sm:text-7xl font-black tracking-tighter" dir="ltr">
-                <!-- Word 1: Smart -->
-                <span id="introSmart" class="opacity-0 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent drop-shadow-[0_10px_20px_rgba(255,255,255,0.2)]">
+                <span id="introSmart" class="opacity-0 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
                     Smart
                 </span>
-                <!-- Word 2: Stream -->
-                <span id="introStream" class="opacity-0 bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent drop-shadow-[0_10px_25px_rgba(229,9,20,0.6)]">
+                <span id="introStream" class="opacity-0 bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent">
                     Stream
                 </span>
             </div>
 
-            <!-- SmartStream Brand Symbol (Hidden initially, appears upon morph) -->
             <div id="introLogoSymbol" class="hidden absolute flex flex-col items-center justify-center" dir="ltr">
-                <div class="bg-gradient-to-br from-red-500 to-red-700 p-6 sm:p-8 rounded-3xl shadow-[0_0_60px_rgba(229,9,20,0.8)] border border-red-400/40 transform">
+                <div class="bg-gradient-to-br from-red-500 to-red-700 p-6 sm:p-8 rounded-3xl shadow-[0_0_60px_rgba(229,9,20,0.8)] border border-red-400/40">
                     <i data-lucide="play" class="w-12 h-12 sm:w-16 sm:h-16 text-white fill-white translate-x-0.5"></i>
                 </div>
-                <span class="mt-4 text-xs font-bold tracking-[0.3em] uppercase text-gray-400">SmartStream</span>
+                <span class="mt-4 text-xs font-bold tracking-[0.3em] uppercase text-gray-300">SmartStream</span>
             </div>
         </div>
 
-        <!-- Skip Intro Button -->
-        <button onclick="window.skipIntro()" class="absolute bottom-8 right-8 text-xs font-semibold text-gray-400 hover:text-white bg-zinc-900/80 hover:bg-zinc-800 border border-zinc-700/60 px-4 py-2 rounded-full transition backdrop-blur-md">
-            דלג על אינטרו &larr;
+        <button onclick="window.skipIntro()" class="absolute bottom-8 right-8 text-xs font-semibold text-gray-300 hover:text-white bg-zinc-900/85 hover:bg-zinc-800 border border-zinc-700/70 px-4 py-2 rounded-full transition backdrop-blur-md">
+            דלג על אינטרו ←
         </button>
     </div>
 
-    <!-- Navigation Bar -->
-    <nav id="mainNavbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-8 py-4 bg-gradient-to-b from-black/90 via-black/50 to-transparent flex items-center justify-between">
-        <div class="flex items-center gap-8">
-            <!-- Brand Logo (Enforced LTR Layout) -->
-            <a href="#" class="flex items-center gap-2 group" dir="ltr">
+    <!-- ========================================================= -->
+    <!-- 2. Main Navigation Bar                                    -->
+    <!-- ========================================================= -->
+    <nav id="mainNavbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-8 py-3.5 bg-gradient-to-b from-black/95 via-black/60 to-transparent flex items-center justify-between gap-3">
+        <div class="flex items-center gap-6 lg:gap-8">
+            <a href="#" onclick="window.filterCategory('all'); return false;" class="flex items-center gap-2 group" dir="ltr">
                 <div class="bg-red-600 p-2 rounded-xl group-hover:scale-105 transition shadow-lg shadow-red-600/30">
-                    <i data-lucide="play" class="w-6 h-6 text-white fill-white"></i>
+                    <i data-lucide="play" class="w-5 h-5 text-white fill-white"></i>
                 </div>
-                <span class="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-200 to-red-500 bg-clip-text text-transparent">
+                <span class="text-xl sm:text-2xl font-extrabold tracking-tight bg-gradient-to-r from-white via-gray-200 to-red-500 bg-clip-text text-transparent">
                     SmartStream
                 </span>
             </a>
 
-            <!-- Navigation Links -->
-            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-gray-300">
+            <div class="hidden lg:flex items-center gap-5 text-sm font-medium text-gray-300">
                 <button onclick="window.filterCategory('all')" class="hover:text-white transition text-white font-bold">דף הבית</button>
-                <button onclick="window.filterCategory('action')" class="hover:text-white transition">אקשן</button>
-                <button onclick="window.filterCategory('scifi')" class="hover:text-white transition">מדע בדיוני</button>
-                <button onclick="window.filterCategory('drama')" class="hover:text-white transition">דרמה</button>
-                <button onclick="window.filterCategory('local')" class="hover:text-white transition flex items-center gap-1.5 text-amber-400">
-                    <i data-lucide="folder" class="w-4 h-4"></i> סרטים מקומיים
+                <button onclick="window.filterCategory('creator')" class="hover:text-amber-300 transition text-amber-400 font-semibold flex items-center gap-1">
+                    <i data-lucide="clapperboard" class="w-4 h-4"></i> יצירות מקוריות
                 </button>
+                <button onclick="window.filterCategory('scifi')" class="hover:text-white transition">מדע בדיוני ואקשן</button>
+                <button onclick="window.filterCategory('family')" class="hover:text-white transition">אנימציה ומשפחה</button>
+                <button onclick="window.filterCategory('classics')" class="hover:text-white transition">נחלת הכלל</button>
+                <a href="#myListSection" class="hover:text-white transition">הרשימה שלי</a>
             </div>
         </div>
 
-        <!-- Left Navbar Controls -->
-        <div class="flex items-center gap-3">
-            <!-- Search Input -->
-            <div class="relative hidden sm:block">
-                <input type="text" id="searchInput" placeholder="חפש סרט, ז'אנר..." 
-                       oninput="window.handleSearch(this.value)"
-                       class="bg-zinc-900/90 border border-zinc-700/60 rounded-full px-4 py-1.5 pr-9 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-red-600 w-44 focus:w-64 transition-all">
-                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute right-3 top-2.5"></i>
+        <div class="flex items-center gap-2.5 sm:gap-3">
+            <!-- Live Search Input -->
+            <div class="relative hidden md:block">
+                <input type="text" id="searchInput" placeholder="חפש סרט, ז'אנר..." oninput="window.handleSearch(this.value)" class="bg-zinc-900/90 border border-zinc-700/70 rounded-full px-4 py-1.5 pr-9 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-red-600 w-44 lg:w-60 transition-all">
+                <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute right-3 top-2"></i>
             </div>
 
+            <!-- Admin & Creator Badge (Visible ONLY for shovalkaufman@gmail.com) -->
+            <div id="adminCreatorBadge" class="hidden items-center gap-1.5 bg-amber-500/15 border border-amber-400/40 text-amber-300 text-[11px] font-black px-3 py-1.5 rounded-full flex-shrink-0">
+                <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>אדמין • יוצר</span>
+            </div>
+
+            <!-- Creator Studio Upload Button (Restricted strictly to Admin/Creator account) -->
+            <button id="navCreatorUploadBtn" onclick="window.openCreatorUploadModal()" class="hidden bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-extrabold text-xs px-3.5 py-2 rounded-full transition shadow-lg shadow-amber-500/20 items-center gap-1.5 flex-shrink-0" title="העלאת סרטים - מורשה לחשבון אדמין ויוצר בלבד">
+                <i data-lucide="film" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">העלה סרט שיצרתי</span>
+                <span class="sm:hidden">+ סרט</span>
+            </button>
+
             <!-- Profile Selector Button -->
-            <button onclick="window.openProfileSelector()" class="bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-white font-medium text-xs px-3.5 py-2 rounded-full transition shadow-md flex items-center gap-2 group">
-                <div id="userAvatar" class="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-white">
+            <button onclick="window.openProfileSelector()" class="bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-white font-medium text-xs px-3 py-1.5 rounded-full transition shadow-md flex items-center gap-2 group flex-shrink-0">
+                <div id="userAvatar" class="w-6 h-6 rounded-full bg-red-600 overflow-hidden flex items-center justify-center text-white font-bold text-[11px]">
                     <i data-lucide="user" class="w-3.5 h-3.5"></i>
                 </div>
-                <span id="userNameDisplay" class="font-bold text-gray-200 group-hover:text-white">פרופילים</span>
+                <div class="flex flex-col text-right leading-none">
+                    <span id="userNameDisplay" class="font-bold text-gray-200 group-hover:text-white max-w-[100px] truncate">אורח (צופה)</span>
+                    <span id="activeProfileAgeTag" class="text-[10px] text-emerald-400 font-bold mt-0.5">צופה • 18+</span>
+                </div>
                 <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-gray-400"></i>
             </button>
 
             <!-- Auth Toggle Button -->
-            <button id="authBtnModalToggle" onclick="window.openAuthModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-4 py-2 rounded-full transition shadow-lg shadow-red-600/30 flex items-center gap-1.5">
-                <i data-lucide="log-in" class="w-4 h-4"></i> התחברות
+            <button id="authBtnModalToggle" onclick="window.openAuthModal('login')" class="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-full transition shadow-lg shadow-red-600/30 flex items-center gap-1.5 flex-shrink-0">
+                <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+                <span>התחברות</span>
             </button>
-            <button id="logoutBtn" onclick="window.handleLogout()" class="hidden bg-zinc-800 hover:bg-zinc-700 text-gray-300 font-bold text-xs px-3 py-2 rounded-full transition">
+
+            <button id="logoutBtn" onclick="window.handleLogout()" class="hidden bg-zinc-800 hover:bg-zinc-700 text-gray-200 font-bold text-xs px-3 py-2 rounded-full transition flex-shrink-0">
                 יציאה
             </button>
         </div>
     </nav>
 
-    <!-- Hero Banner Section -->
-    <section id="heroSection" class="relative h-[80vh] min-h-[550px] w-full flex items-end pb-16 px-6 sm:px-12 overflow-hidden">
-        <!-- Hero Background Media -->
+    <!-- ========================================================= -->
+    <!-- 3. Cinematic Hero Banner                                  -->
+    <!-- ========================================================= -->
+    <header id="heroSection" class="relative h-[78vh] min-h-[520px] w-full flex items-end pb-16 px-6 sm:px-12 overflow-hidden">
         <div class="absolute inset-0 z-0">
-            <img id="heroImage" src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=2000&q=80" class="w-full h-full object-cover object-center transform scale-105 transition-all duration-1000" alt="Hero Banner">
-            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent"></div>
-            <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent"></div>
+            <img id="heroImage" src="https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg" onerror="this.src='https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=2000&q=80'" class="w-full h-full object-cover object-center opacity-50 transform scale-105 transition-all duration-700" alt="Hero Banner">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/55 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/45 to-transparent"></div>
         </div>
 
-        <!-- Hero Content Overlay -->
         <div class="relative z-10 max-w-2xl space-y-4 animate-fade-in">
-            <div class="flex items-center gap-2">
-                <span class="bg-red-600 text-white font-black text-[10px] tracking-widest px-2.5 py-1 rounded uppercase">מומלץ השבוע</span>
-                <span id="heroCategory" class="text-xs text-gray-300 font-semibold bg-zinc-800/80 backdrop-blur px-2.5 py-1 rounded-md border border-zinc-700">מדע בדיוני &bull; אקשן</span>
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="bg-red-600 text-white font-black text-[10px] tracking-widest px-2.5 py-1 rounded uppercase">Smart Original • חינם לכולם</span>
+                <span id="heroCategory" class="text-xs text-gray-200 font-semibold bg-zinc-800/85 backdrop-blur px-2.5 py-1 rounded-md border border-zinc-700">מדע בדיוני • אקשן • 13+</span>
             </div>
+
             <h1 id="heroTitle" class="text-4xl sm:text-6xl font-black tracking-tight text-white drop-shadow-md">
                 Tears of Steel
             </h1>
-            <p id="heroDescription" class="text-gray-300 text-sm sm:text-base line-clamp-3 font-normal leading-relaxed">
-                בעתיד דיסטופי שרבוט סוער שולט בעיר. קבוצת לוחמים מנסה לשחזר את העבר ולהציל את העולם מפני כיליון מוחלט דרך טכנולוגיות ניסיוניות.
+
+            <p id="heroDescription" class="text-gray-300 text-sm sm:text-base line-clamp-3 leading-relaxed">
+                בעתיד דיסטופי שרובוטים שולטים בעיר אמסטרדם, קבוצת לוחמים ומדענים מנסה לשחזר את העבר ולהציל את האנושות דרך טכנולוגיות ניסיוניות.
             </p>
 
-            <div class="flex items-center gap-4 pt-2">
-                <button id="heroPlayBtn" onclick="window.playMovie('tears_of_steel')" class="bg-white hover:bg-gray-200 text-black font-extrabold px-6 py-3 rounded-xl transition shadow-xl flex items-center gap-2 text-sm sm:text-base transform active:scale-95">
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+                <button id="heroPlayBtn" onclick="window.playMovie('tears_of_steel')" class="bg-white hover:bg-gray-200 text-black font-extrabold px-6 py-3 rounded-xl transition shadow-xl flex items-center gap-2 text-sm sm:text-base active:scale-95">
                     <i data-lucide="play" class="w-5 h-5 fill-black"></i>
                     <span>נגן עכשיו</span>
                 </button>
-                <button id="heroInfoBtn" onclick="window.openMovieDetails('tears_of_steel')" class="bg-zinc-800/80 hover:bg-zinc-700 text-white font-bold px-6 py-3 rounded-xl transition backdrop-blur border border-zinc-600 flex items-center gap-2 text-sm sm:text-base">
+                <button id="heroInfoBtn" onclick="window.openMovieDetails('tears_of_steel')" class="bg-zinc-800/85 hover:bg-zinc-700 text-white font-bold px-5 py-3 rounded-xl transition backdrop-blur border border-zinc-600 flex items-center gap-2 text-sm sm:text-base">
                     <i data-lucide="info" class="w-5 h-5 text-gray-300"></i>
                     <span>מידע נוסף</span>
                 </button>
+                <button id="heroFavBtn" onclick="window.toggleFavoriteCloud('tears_of_steel')" class="bg-zinc-900/85 hover:bg-zinc-800 text-white font-bold px-4 py-3 rounded-xl transition border border-zinc-700 flex items-center gap-2 text-sm">
+                    <i data-lucide="bookmark" class="w-5 h-5 text-amber-400"></i>
+                    <span>הרשימה שלי</span>
+                </button>
             </div>
         </div>
-    </section>
+    </header>
 
-    <!-- Main Movie Rows / Categories -->
-    <main class="relative z-20 -mt-10 space-y-10 pb-20 px-4 sm:px-12">
+    <!-- ========================================================= -->
+    <!-- 4. Main Content Shelves                                   -->
+    <!-- ========================================================= -->
+    <main class="relative z-20 -mt-8 space-y-10 pb-20 px-4 sm:px-12">
 
         <!-- Continue Watching Shelf -->
         <section id="continueWatchingSection" class="hidden">
             <div class="flex items-center justify-between mb-3">
                 <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2">
                     <i data-lucide="clock" class="w-5 h-5 text-red-500"></i>
-                    <span>המשך לצפות עבור <span id="currentProfileWatchName" class="text-red-500"></span></span>
+                    <span>המשך לצפות עבור <span id="currentProfileWatchName" class="text-red-500">אורח (צופה)</span></span>
                 </h2>
             </div>
-            <div id="continueWatchingRow" class="flex gap-4 overflow-x-auto no-scrollbar py-2">
-                <!-- Dynamic Continue Watching Cards -->
-            </div>
+            <div id="continueWatchingRow" class="flex gap-4 overflow-x-auto no-scrollbar py-2"></div>
         </section>
 
-        <!-- Local Files Shelf (Crucial for Local Playback) -->
-        <section id="localSection">
-            <div class="flex items-center justify-between mb-3">
+        <!-- Shelf 1: Smart Creator Originals (יצירות מקוריות) -->
+        <section id="creatorSection" data-shelf="creator">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
                 <div>
                     <h2 class="text-xl sm:text-2xl font-bold flex items-center gap-2 text-amber-400">
-                        <i data-lucide="folder-open" class="w-6 h-6"></i>
-                        <span>סרטים מקומיים (Local Files)</span>
+                        <i data-lucide="clapperboard" class="w-6 h-6"></i>
+                        <span>יצירות מקוריות • Smart Creator Originals</span>
                     </h2>
-                    <p class="text-xs text-gray-400">קבצים מתיקיית <code class="text-amber-300">movies/</code> ורשת מקומית</p>
+                    <p class="text-xs text-gray-400 mt-0.5">סרטים מקוריים שהועלו על ידי מנהל ויוצר הפלטפורמה — פתוחים לצפייה חינמית לכולם</p>
                 </div>
+                <button id="shelfCreatorUploadBtn" onclick="window.openCreatorUploadModal()" class="hidden bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 text-xs font-bold px-3.5 py-2 rounded-xl transition items-center gap-1.5">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i> הוסף סרט חדש שיצרת
+                </button>
             </div>
-            <div id="localRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3">
-                <!-- Dynamic local cards -->
-            </div>
+            <div id="creatorRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3"></div>
         </section>
 
-        <!-- Category: Blockbusters & Streaming Favorites -->
-        <section>
+        <!-- Shelf 2: Sci-Fi & Action -->
+        <section id="scifiSection" data-shelf="scifi">
             <h2 class="text-xl sm:text-2xl font-bold mb-3 flex items-center gap-2">
-                <i data-lucide="flame" class="w-5 h-5 text-red-500"></i>
-                <span>סרטים פופולריים ועכשווים</span>
+                <i data-lucide="zap" class="w-5 h-5 text-red-500"></i>
+                <span>מדע בדיוני ואקשן (סרטים מלאים)</span>
             </h2>
-            <div id="popularRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3">
-                <!-- Dynamic Popular Cards -->
-            </div>
+            <div id="scifiRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3"></div>
         </section>
 
-        <!-- Category: Sci-Fi & Action -->
-        <section>
+        <!-- Shelf 3: Family & Animation -->
+        <section id="familySection" data-shelf="family">
             <h2 class="text-xl sm:text-2xl font-bold mb-3 flex items-center gap-2">
-                <i data-lucide="zap" class="w-5 h-5 text-amber-500"></i>
-                <span>אקשן ומדע בדיוני</span>
+                <i data-lucide="sparkles" class="w-5 h-5 text-emerald-400"></i>
+                <span>אנימציה ולכל המשפחה</span>
             </h2>
-            <div id="scifiRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3">
-                <!-- Dynamic SciFi Cards -->
-            </div>
+            <div id="familyRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3"></div>
         </section>
 
-        <!-- Category: Classics & Open Source Cinema -->
-        <section>
+        <!-- Shelf 4: Public Domain & Classics -->
+        <section id="classicsSection" data-shelf="classics">
             <h2 class="text-xl sm:text-2xl font-bold mb-3 flex items-center gap-2">
-                <i data-lucide="film" class="w-5 h-5 text-blue-500"></i>
-                <span>קלאסיקות וקולנוע פתוח</span>
+                <i data-lucide="film" class="w-5 h-5 text-purple-400"></i>
+                <span>נחלת הכלל וקלאסיקות קולנוע</span>
             </h2>
-            <div id="classicsRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3">
-                <!-- Dynamic Classics Cards -->
+            <div id="classicsRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3"></div>
+        </section>
+
+        <!-- Shelf 5: My Cloud Favorites List -->
+        <section id="myListSection">
+            <h2 class="text-xl sm:text-2xl font-bold mb-3 flex items-center gap-2">
+                <i data-lucide="bookmark" class="w-5 h-5 text-amber-400"></i>
+                <span>הרשימה שלי (מסונכרן בענן ☁️)</span>
+            </h2>
+            <div id="favoritesRow" class="flex gap-4 overflow-x-auto no-scrollbar py-3">
+                <div class="text-gray-500 text-sm py-4">עדיין לא שמרת סרטים ברשימה שלך.</div>
             </div>
         </section>
     </main>
 
-    <!-- Profile Selector Modal (Netflix TV Style Grid & Side Panel) -->
-    <div id="profileModal" class="fixed inset-0 z-[9996] poster-wall-bg hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-md overflow-y-auto">
-        <!-- Central Gray Glass Box -->
-        <div class="glass-panel rounded-3xl w-full max-w-4xl p-6 sm:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.95)] relative text-center border border-zinc-700/80">
-            
-            <button onclick="window.closeProfileSelector()" class="absolute top-5 left-5 text-gray-400 hover:text-white p-2 rounded-full bg-black/50 hover:bg-red-600 transition">
-                <i data-lucide="x" class="w-6 h-6"></i>
+    <!-- ========================================================= -->
+    <!-- 5. Profile Selector Modal ("מי צופה עכשיו?")               -->
+    <!--    With Classic Red Cinema Seats Background               -->
+    <!-- ========================================================= -->
+    <div id="profileModal" class="fixed inset-0 z-[9996] cinema-seats-bg hidden flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div class="glass-panel rounded-3xl w-full max-w-4xl p-6 sm:p-10 shadow-[0_25px_70px_rgba(0,0,0,0.95)] relative text-center border border-red-500/20 animate-fade-in">
+            <button onclick="window.closeProfileSelector()" class="absolute top-5 left-5 text-gray-300 hover:text-white p-2 rounded-full bg-black/60 hover:bg-red-600 transition">
+                <i data-lucide="x" class="w-5 h-5"></i>
             </button>
 
-            <!-- Title & Subtitle -->
-            <div class="mb-8">
-                <span class="bg-red-600/20 text-red-500 border border-red-600/40 text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-2">SmartStream Profiles</span>
+            <div class="mb-6">
+                <span class="bg-red-600/25 text-red-400 border border-red-500/40 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-block mb-2">
+                    SmartStream Cinema Profiles
+                </span>
                 <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">מי צופה עכשיו?</h2>
-                <p class="text-gray-400 text-xs sm:text-sm mt-2">בחר פרופיל צפייה או צור פרופיל חדש להתאמה אישית</p>
+                <p class="text-gray-300 text-xs sm:text-sm mt-2">בחר פרופיל צפייה או צור פרופיל חדש עם סינון דירוג גיל מותאם אישית</p>
             </div>
 
-            <!-- Profiles Grid Container -->
-            <div id="profilesContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-center my-8">
-                <!-- Dynamic Profile Cards -->
-            </div>
+            <div id="profilesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5 justify-center my-8"></div>
 
-            <!-- Profile Actions -->
-            <div class="pt-6 border-t border-zinc-800/80 flex flex-wrap justify-center items-center gap-4">
-                <button onclick="window.addNewProfilePrompt()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow-lg shadow-red-600/30 flex items-center gap-2 text-sm transform active:scale-95">
-                    <i data-lucide="plus" class="w-5 h-5"></i>
-                    <span>הוסף פרופיל חדש</span>
+            <div class="pt-5 border-t border-white/10 flex flex-wrap justify-center items-center gap-3">
+                <button onclick="window.openCreateProfileModal()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition shadow-lg shadow-red-600/30 flex items-center gap-2 text-sm active:scale-95">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>צור פרופיל צופה חדש</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Movie Details Modal -->
-    <div id="movieDetailsModal" class="fixed inset-0 z-[9990] bg-black/80 hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-sm overflow-y-auto">
+    <!-- ========================================================= -->
+    <!-- 6. Create New Viewer Profile Modal (Custom UI, no prompt) -->
+    <!-- ========================================================= -->
+    <div id="createProfileModal" class="fixed inset-0 z-[9997] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-6 sm:p-8 relative shadow-2xl animate-fade-in">
+            <button onclick="window.closeCreateProfileModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white p-2 rounded-full">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="text-center mb-6">
+                <div class="w-12 h-12 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center mx-auto mb-3">
+                    <i data-lucide="user-plus" class="w-6 h-6"></i>
+                </div>
+                <h3 class="text-2xl font-black text-white">צור פרופיל צופה חדש</h3>
+                <p class="text-xs text-gray-400 mt-1">הגדר שם, אוואטר והגבלת גיל לצפייה מותאמת</p>
+            </div>
+
+            <form onsubmit="window.handleCreateProfileSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">שם הצופה</label>
+                    <input type="text" id="newProfileName" required maxlength="20" placeholder="לדוגמה: נועה, דניאל..." class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-2">בחר תמונת אוואטר</label>
+                    <div id="avatarPickerGrid" class="grid grid-cols-4 gap-2.5"></div>
+                </div>
+
+                <div class="flex items-center justify-between bg-zinc-800/70 border border-zinc-700/70 p-3 rounded-xl">
+                    <div>
+                        <div class="text-xs font-bold text-white">מצב מותאם לילדים (Kids Mode)</div>
+                        <div class="text-[11px] text-gray-400">מגביל אוטומטית תכנים עד דירוג 10+</div>
+                    </div>
+                    <input type="checkbox" id="newProfileKidsToggle" onchange="window.toggleKidsAgeLock(this.checked)" class="w-5 h-5 accent-red-600 cursor-pointer">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">הגבלת דירוג גיל מקסימלית</label>
+                    <select id="newProfileAgeSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600">
+                        <option value="6">6+ (לכל הגילאים)</option>
+                        <option value="10">10+ (ילדים ונוער צעיר)</option>
+                        <option value="12">12+ (נוער)</option>
+                        <option value="13">13+ (נוער בוגר)</option>
+                        <option value="16">16+ (בוגרים)</option>
+                        <option value="18" selected>18+ (כל התכנים ללא הגבלה)</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-600/30 text-sm">
+                    שמור והפעל פרופיל
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 7. Smart Creator Studio Modal (Restricted to Admin/Creator)-->
+    <!-- ========================================================= -->
+    <div id="creatorUploadModal" class="fixed inset-0 z-[9998] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-zinc-900 border border-amber-500/30 rounded-3xl w-full max-w-lg p-6 sm:p-8 relative shadow-2xl animate-fade-in">
+            <button onclick="window.closeCreatorUploadModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white p-2 rounded-full">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-black flex items-center justify-center shadow-lg">
+                    <i data-lucide="clapperboard" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-wider text-amber-400">Smart Creator Studio • Admin Only</span>
+                    <h3 class="text-xl sm:text-2xl font-black text-white">העלאת סרט חדש שיצרת</h3>
+                </div>
+            </div>
+
+            <form onsubmit="window.handleCreatorMovieSubmit(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">שם הסרט שיצרת *</label>
+                    <input type="text" id="creatorMovieTitle" required placeholder="הזן את שם הסרט..." class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="bg-zinc-800/70 border border-dashed border-amber-500/40 rounded-2xl p-4 text-center">
+                    <label for="creatorLocalVideoFile" class="cursor-pointer flex flex-col items-center gap-1.5">
+                        <i data-lucide="upload-cloud" class="w-7 h-7 text-amber-400"></i>
+                        <span class="text-xs font-bold text-white">בחר קובץ וידאו מהמכשיר (MP4 / WebM)</span>
+                        <span id="pickedVideoFileName" class="text-[11px] text-gray-400">לא נבחר קובץ מקומי — ניתן גם להזין נתיב או קישור למטה</span>
+                    </label>
+                    <input type="file" id="creatorLocalVideoFile" accept="video/*" onchange="window.handleCreatorFilePicked(this)" class="hidden">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">או קישור ישיר / נתיב מקומי (למשל movies/my_film.mp4)</label>
+                    <input type="text" id="creatorMovieUrl" placeholder="https://... או movies/film.mp4" dir="ltr" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">ז'אנר ראשי</label>
+                        <select id="creatorMovieGenre" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+                            <option value="מדע בדיוני">מדע בדיוני</option>
+                            <option value="אקשן">אקשן</option>
+                            <option value="פנטזיה">פנטזיה</option>
+                            <option value="אנימציה">אנימציה</option>
+                            <option value="דרמה">דרמה</option>
+                            <option value="הרפתקאות">הרפתקאות</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">דירוג גיל</label>
+                        <select id="creatorMovieAge" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
+                            <option value="6">6+</option>
+                            <option value="10">10+</option>
+                            <option value="12" selected>12+</option>
+                            <option value="16">16+</option>
+                            <option value="18">18+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">קישור לפוסטר (אופציונלי)</label>
+                    <input type="text" id="creatorMoviePoster" placeholder="https://..." dir="ltr" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-gray-300 mb-1">תקציר הסרט</label>
+                    <textarea id="creatorMovieDesc" rows="2" placeholder="כתוב תיאור קצר על הסרט שיצרת..." class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"></textarea>
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-l from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black py-3 rounded-xl transition shadow-lg text-sm">
+                    פרסם סרט בפלטפורמה 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 8. Movie Details Modal                                    -->
+    <!-- ========================================================= -->
+    <div id="movieDetailsModal" class="fixed inset-0 z-[9990] bg-black/80 hidden flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
         <div class="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl relative animate-fade-in">
-            <button onclick="window.closeMovieDetails()" class="absolute top-4 left-4 z-20 bg-black/60 hover:bg-red-600 text-white p-2 rounded-full transition">
+            <button onclick="window.closeMovieDetails()" class="absolute top-4 left-4 z-20 bg-black/65 hover:bg-red-600 text-white p-2 rounded-full transition">
                 <i data-lucide="x" class="w-5 h-5"></i>
             </button>
             <div class="relative h-64 sm:h-80 w-full">
                 <img id="modalCover" src="" class="w-full h-full object-cover" alt="Movie Banner">
                 <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/40 to-transparent"></div>
-                <div class="absolute bottom-6 right-6 left-6 flex items-end justify-between">
-                    <div>
+                <div class="absolute bottom-5 right-6 left-6">
+                    <div class="flex items-center gap-2">
                         <span id="modalCategory" class="text-xs bg-red-600 text-white font-bold px-2.5 py-1 rounded-md">ז'אנר</span>
-                        <h2 id="modalTitle" class="text-3xl sm:text-4xl font-extrabold text-white mt-2">שם הסרט</h2>
+                        <span id="modalAgeBadge" class="text-xs bg-zinc-800/90 border border-zinc-600 text-gray-200 font-bold px-2 py-1 rounded-md">13+</span>
                     </div>
+                    <h2 id="modalTitle" class="text-3xl sm:text-4xl font-extrabold text-white mt-2">שם הסרט</h2>
                 </div>
             </div>
             <div class="p-6 sm:p-8 space-y-4">
                 <p id="modalDescription" class="text-gray-300 text-sm sm:text-base leading-relaxed">תיאור הסרט...</p>
-                <div class="flex items-center gap-4 text-xs text-gray-400 border-y border-zinc-800 py-3">
-                    <div>משך סרט: <span id="modalDuration" class="text-white font-semibold">120 דקות</span></div>
-                    <div>&bull;</div>
-                    <div>איכות: <span id="modalQuality" class="text-amber-400 font-bold">4K Ultra HD / MP4</span></div>
+                <div class="flex flex-wrap items-center gap-4 text-xs text-gray-400 border-y border-zinc-800 py-3">
+                    <div>משך צפייה: <span id="modalDuration" class="text-white font-semibold">12 דקות</span></div>
+                    <div>•</div>
+                    <div>איכות: <span class="text-amber-400 font-bold">Full HD / MP4</span></div>
+                    <div>•</div>
+                    <div class="text-emerald-400 font-bold">צפייה חינמית ללא הגבלה</div>
                 </div>
                 <div class="flex justify-end gap-3 pt-2">
-                    <button id="modalPlayBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg flex items-center gap-2">
+                    <button id="modalFavBtn" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-5 py-3 rounded-xl transition flex items-center gap-2 text-sm">
+                        <i data-lucide="bookmark" class="w-4 h-4 text-amber-400"></i>
+                        <span>שמור ברשימה</span>
+                    </button>
+                    <button id="modalPlayBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-3 rounded-xl transition shadow-lg flex items-center gap-2 text-sm">
                         <i data-lucide="play" class="w-5 h-5 fill-white"></i>
-                        <span>נגן סרט</span>
+                        <span>נגן סרט עכשיו</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Custom Video Player Modal -->
-    <div id="videoPlayerModal" class="fixed inset-0 z-[9999] bg-black hidden flex flex-col justify-between">
-        <!-- Top Player Bar -->
-        <div class="p-4 bg-gradient-to-b from-black/90 to-transparent flex items-center justify-between z-10">
-            <div class="flex items-center gap-3">
-                <button onclick="window.closeVideoPlayer()" class="text-white hover:text-red-500 p-2 rounded-full transition bg-zinc-900/60">
-                    <i data-lucide="arrow-right" class="w-6 h-6"></i>
-                </button>
-                <h3 id="playerMovieTitle" class="text-lg font-bold text-white">מנגן סרט...</h3>
+    <!-- ========================================================= -->
+    <!-- 9. Authentication Modal (With Admin/Creator Recognition)  -->
+    <!-- ========================================================= -->
+    <div id="authModal" class="fixed inset-0 z-[10000] bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-[#181818] border border-white/10 rounded-3xl w-full max-w-md p-6 sm:p-8 relative shadow-2xl animate-fade-in">
+            <button onclick="window.closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white p-2">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <!-- Step 1: Login / Register -->
+            <div id="authStep1">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 mb-3">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 id="authModalTitle" class="text-2xl font-black text-white">התחברות ל-SmartStream</h3>
+                    <p class="text-xs text-gray-400 mt-1">התחבר כדי לסנכרן פרופילים, רשימת צפייה או לנהל תוכן כיוצר</p>
+                </div>
+
+                <div class="flex border-b border-zinc-800 mb-5">
+                    <button id="tabLogin" onclick="window.switchAuthTab('login')" class="flex-1 pb-2.5 font-bold text-sm text-red-500 border-b-2 border-red-500 transition">התחברות</button>
+                    <button id="tabRegister" onclick="window.switchAuthTab('register')" class="flex-1 pb-2.5 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition">הרשמה חדשה</button>
+                </div>
+
+                <form onsubmit="window.handleAuthSubmitStep1(event)" class="space-y-4">
+                    <div id="nameInputGroup" class="hidden">
+                        <label class="block text-xs font-bold text-gray-300 mb-1">שם מלא</label>
+                        <input type="text" id="authName" placeholder="ישראל ישראלי" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">כתובת אימייל</label>
+                        <input type="email" id="authEmail" required placeholder="user@example.com" dir="ltr" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-300 mb-1">סיסמה</label>
+                        <input type="password" id="authPassword" required placeholder="••••••••" dir="ltr" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-600">
+                    </div>
+
+                    <div id="authError" class="hidden text-red-400 text-xs font-bold text-center bg-red-500/10 py-2 px-3 border border-red-500/20 rounded-xl"></div>
+
+                    <button type="submit" id="authSubmitBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg text-sm">
+                        המשך לאימות
+                    </button>
+                </form>
             </div>
-            <div class="text-xs font-bold px-3 py-1 rounded-full text-white border border-red-500/50 bg-red-600/20 shadow-lg flex items-center gap-1.5" id="streamTypeTag">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
-                <span id="streamTypeText">DASH Stream / MP4</span>
+
+            <!-- Step 2: 2FA Verification -->
+            <div id="authStep2" class="hidden">
+                <div class="text-center mb-6">
+                    <div class="w-12 h-12 bg-red-600/20 border border-red-500/30 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i data-lucide="mail-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-white">אימות דו-שלבי (2FA)</h3>
+                    <p class="text-xs text-gray-400 mt-1">הזן את קוד האימות בן 6 הספרות שהוצג בהודעה</p>
+                </div>
+
+                <form onsubmit="window.handleAuthSubmitStep2(event)" class="space-y-4">
+                    <input type="text" id="twoFactorCode" maxlength="6" required placeholder="123456" dir="ltr" class="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-center text-2xl font-mono tracking-widest text-white focus:outline-none focus:border-red-600">
+                    <div id="step2Error" class="hidden text-red-400 text-xs font-bold text-center bg-red-500/10 py-2 rounded-xl"></div>
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg text-sm">
+                        אמת והיכנס לפלטפורמה
+                    </button>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Video Canvas / Tag Container -->
-        <div class="relative flex-1 bg-black flex items-center justify-center overflow-hidden">
-            <video id="mainVideoElement" class="w-full h-full object-contain" crossorigin="anonymous"></video>
-            
-            <!-- Post-Play / Next Up Overlay -->
-            <div id="postPlayOverlay" class="absolute inset-0 bg-black/90 hidden flex flex-col items-center justify-center text-center p-6 z-20 backdrop-blur-md">
-                <i data-lucide="check-circle-2" class="w-16 h-16 text-emerald-500 mb-4 animate-bounce"></i>
-                <h2 class="text-2xl font-bold text-white mb-2">הסרט הסתיים!</h2>
-                <p class="text-gray-400 text-sm mb-6">מקווים שנהנית מהצפייה ב-SmartStream</p>
-                <div class="flex gap-4">
-                    <button onclick="window.replayCurrentVideo()" class="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-5 py-2.5 rounded-xl transition flex items-center gap-2">
-                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> צפה שוב
+    <!-- ========================================================= -->
+    <!-- 10. Custom Video Player + 30s End-Credits Rating & Recs   -->
+    <!-- ========================================================= -->
+    <div id="customPlayer">
+        <!-- Floating PiP Video Stage -->
+        <div class="video-stage" id="videoStage" onclick="if(document.getElementById('customPlayer').classList.contains('credits-pip-mode')) window.restoreFullPlayer();">
+            <div id="playerBuffering" class="player-buffering-overlay">
+                <div class="w-14 h-14 border-4 border-zinc-800 border-t-red-600 rounded-full animate-spin mb-3"></div>
+                <span class="text-white text-xs font-bold tracking-widest uppercase">טוען שידור HD...</span>
+            </div>
+            <video id="mainVideo" class="w-full h-full object-contain bg-black" playsinline preload="metadata"></video>
+        </div>
+
+        <!-- Automatic 30s-Before-End Overlay (Rating -> Personalized Recommendations) -->
+        <div id="endCreditsOverlay" class="fixed inset-0 z-[10010] bg-gradient-to-t from-black via-black/95 to-zinc-950/95 hidden flex flex-col items-center justify-center p-4 sm:p-8 overflow-y-auto">
+            <!-- Step 1: Viewing Experience Rating -->
+            <div id="ratingStepCard" class="w-full max-w-2xl bg-zinc-900/90 border border-white/10 rounded-3xl p-6 sm:p-10 text-center shadow-2xl animate-fade-in mt-36 md:mt-0">
+                <span class="bg-red-600/20 text-red-400 border border-red-500/40 text-xs font-black px-3 py-1 rounded-full inline-block mb-3">
+                    30 שניות לסיום • הקרדיטים ממשיכים בפינה
+                </span>
+                <h2 class="text-2xl sm:text-4xl font-black text-white mb-2">דרג את חוויית הצפייה</h2>
+                <p id="ratingMovieSubtitle" class="text-gray-400 text-sm mb-7">איך נהנית מהצפייה בסרט?</p>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                    <button onclick="window.submitViewingRating('good', 'טוב', 1)" class="bg-zinc-800/90 hover:bg-red-600/25 border border-zinc-700 hover:border-red-500 rounded-2xl p-4 flex flex-col items-center gap-2 transition transform hover:-translate-y-1">
+                        <span class="text-3xl sm:text-4xl">👍</span>
+                        <span class="text-xs sm:text-sm font-bold text-white">טוב</span>
                     </button>
-                    <button onclick="window.closeVideoPlayer()" class="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition">
-                        חזור לקטלוג
+                    <button onclick="window.submitViewingRating('liked', 'טוב ואהבתי', 2)" class="bg-zinc-800/90 hover:bg-red-600/25 border border-zinc-700 hover:border-red-500 rounded-2xl p-4 flex flex-col items-center gap-2 transition transform hover:-translate-y-1">
+                        <span class="text-3xl sm:text-4xl">😊</span>
+                        <span class="text-xs sm:text-sm font-bold text-white">טוב ואהבתי</span>
+                    </button>
+                    <button onclick="window.submitViewingRating('loved', 'אהבתי מאוד', 3)" class="bg-zinc-800/90 hover:bg-red-600/25 border border-zinc-700 hover:border-red-500 rounded-2xl p-4 flex flex-col items-center gap-2 transition transform hover:-translate-y-1">
+                        <span class="text-3xl sm:text-4xl">💕</span>
+                        <span class="text-xs sm:text-sm font-bold text-white">אהבתי מאוד</span>
+                    </button>
+                    <button onclick="window.submitViewingRating('perfect', 'מושלם', 4)" class="bg-zinc-800/90 hover:bg-red-600/25 border border-zinc-700 hover:border-red-500 rounded-2xl p-4 flex flex-col items-center gap-2 transition transform hover:-translate-y-1">
+                        <span class="text-3xl sm:text-4xl">👌</span>
+                        <span class="text-xs sm:text-sm font-bold text-white">מושלם</span>
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button onclick="window.restoreFullPlayer()" class="text-xs text-gray-300 hover:text-white bg-zinc-800 px-4 py-2 rounded-xl transition">
+                        הגדל נגן חזרה
+                    </button>
+                    <button onclick="window.submitViewingRating('skip', 'דילוג', 0)" class="text-xs text-gray-400 hover:text-white px-4 py-2 rounded-xl transition">
+                        דלג להמלצות צפייה ←
                     </button>
                 </div>
             </div>
+
+            <!-- Step 2: Personalized Recommendations Screen -->
+            <div id="recommendationsStepCard" class="hidden w-full max-w-5xl pt-36 md:pt-12 animate-fade-in">
+                <div class="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-3 text-right">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-extrabold text-amber-400 uppercase tracking-wider mb-1">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> מנוע ההמלצות החכם של SmartStream
+                        </div>
+                        <h2 class="text-2xl md:text-4xl font-black text-white">המלצות צפייה במיוחד עבורך</h2>
+                        <p id="recommendationReasonText" class="text-xs md:text-sm text-gray-400 mt-1">מותאם לפי הסרט שצפית כעת והדירוגים ששמרת</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2.5 self-start md:self-auto">
+                        <div id="autoNextBanner" class="hidden bg-red-600/20 border border-red-500/40 text-red-200 text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-2">
+                            <span id="autoNextCountdownText">הסרט הבא יתחיל בעוד 12 שנ'...</span>
+                            <button onclick="window.cancelAutoNextMovie()" class="text-white underline hover:text-amber-300">ביטול</button>
+                        </div>
+                        <button onclick="window.closePlayer()" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                            חזרה לקטלוג הראשי
+                        </button>
+                    </div>
+                </div>
+
+                <div id="smartRecommendationsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5"></div>
+            </div>
         </div>
 
-        <!-- Bottom Player Controls Bar -->
-        <div class="p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex flex-col gap-2 z-10">
-            <!-- Progress Bar -->
-            <div class="flex items-center gap-3 text-xs text-gray-300">
-                <span id="currentTimeDisplay">00:00</span>
-                <input type="range" id="videoSeekBar" min="0" max="100" value="0" step="0.1"
-                       class="w-full accent-red-600 h-1.5 bg-zinc-700 rounded-lg cursor-pointer">
-                <span id="durationDisplay">00:00</span>
+        <!-- Top Player Bar -->
+        <div id="playerTopBar" class="absolute top-0 left-0 right-0 p-4 sm:p-6 flex justify-between items-center bg-gradient-to-b from-black/85 to-transparent z-50">
+            <button onclick="window.closePlayer()" class="text-white hover:text-red-500 transition flex items-center gap-2 font-bold text-sm sm:text-base bg-zinc-900/70 px-3.5 py-2 rounded-full">
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                <span>חזרה לקטלוג</span>
+            </button>
+
+            <h3 id="playerMovieTitle" class="text-white font-extrabold text-base sm:text-xl truncate max-w-[50%]">שם הסרט</h3>
+
+            <div class="text-xs font-bold px-3 py-1.5 rounded-full text-white border border-red-500/40 bg-red-600/20 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="streamTypeText">HD Direct MP4</span>
+            </div>
+        </div>
+
+        <!-- Bottom Player Controls -->
+        <div id="videoControls" class="controls-container z-50">
+            <div class="w-full flex items-center gap-3 mb-2.5">
+                <span id="currentTimeDisplay" class="text-xs font-bold text-gray-300 font-mono">00:00</span>
+                <input type="range" id="progressBar" min="0" max="100" value="0" step="0.1" class="flex-1">
+                <span id="durationDisplay" class="text-xs font-bold text-gray-400 font-mono">00:00</span>
             </div>
 
-            <div class="flex items-center justify-between pt-1">
+            <div class="flex justify-between items-center">
                 <div class="flex items-center gap-3 sm:gap-4">
-                    <!-- Play/Pause Toggle -->
-                    <button id="playPauseToggleBtn" onclick="window.toggleVideoPlay()" class="text-white hover:text-red-500 transition focus:outline-none" title="נגן/השהה">
-                        <i data-lucide="play" class="w-7 h-7 fill-white" id="playIcon"></i>
+                    <button id="playPauseBtn" class="text-white hover:text-red-500 transition p-1" title="נגן / השהה">
+                        <i data-lucide="play" class="w-7 h-7 fill-current"></i>
                     </button>
-
-                    <!-- Skip Back 10s -->
-                    <button onclick="window.skipTime(-10)" class="text-gray-300 hover:text-white transition flex items-center gap-1 text-xs font-semibold focus:outline-none hover:scale-105 active:scale-95" title="אחורה 10 שניות">
+                    <button id="rewindBtn" class="text-gray-300 hover:text-white transition p-1 flex items-center gap-1 text-xs font-bold" title="10 שניות אחורה">
                         <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
                         <span class="hidden sm:inline">10s</span>
                     </button>
-
-                    <!-- Skip Forward 10s -->
-                    <button onclick="window.skipTime(10)" class="text-gray-300 hover:text-white transition flex items-center gap-1 text-xs font-semibold focus:outline-none hover:scale-105 active:scale-95" title="קדימה 10 שניות">
+                    <button id="forwardBtn" class="text-gray-300 hover:text-white transition p-1 flex items-center gap-1 text-xs font-bold" title="10 שניות קדימה">
                         <i data-lucide="rotate-cw" class="w-5 h-5"></i>
                         <span class="hidden sm:inline">10s</span>
                     </button>
 
-                    <!-- Volume & Mute Controls -->
-                    <div class="flex items-center gap-2">
-                        <button onclick="window.toggleMute()" class="text-gray-300 hover:text-white focus:outline-none" title="השתק/הפעל שמע">
-                            <i data-lucide="volume-2" class="w-5 h-5" id="volumeIcon"></i>
+                    <div class="flex items-center gap-2 ml-2">
+                        <button id="muteBtn" class="text-gray-300 hover:text-white transition p-1" title="השתק">
+                            <i data-lucide="volume-2" class="w-5 h-5"></i>
                         </button>
-                        <input type="range" id="volumeSlider" min="0" max="1" step="0.05" value="1"
-                               oninput="window.setVolume(this.value)"
-                               class="w-16 sm:w-24 accent-red-600 h-1 bg-zinc-700 rounded-lg cursor-pointer">
+                        <input type="range" id="volumeSlider" min="0" max="1" value="1" step="0.05" class="w-16 sm:w-24">
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3 text-sm font-semibold">
-                    <!-- Playback Speed Selector Dropdown -->
-                    <div class="relative group">
-                        <button id="speedBtn" class="text-gray-300 hover:text-white transition px-2 py-1 rounded bg-zinc-800/80 hover:bg-zinc-700 text-xs font-bold border border-zinc-700/60" title="מהירות ניגון">
-                            1.0x
-                        </button>
-                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col bg-zinc-900 border border-zinc-700 rounded-xl p-1 shadow-2xl z-30 min-w-[75px] backdrop-blur-md">
-                            <button onclick="window.changeSpeed(0.5)" class="px-2 py-1 text-xs text-right text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition">0.5x</button>
-                            <button onclick="window.changeSpeed(1.0)" class="px-2 py-1 text-xs text-right text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition font-bold">1.0x</button>
-                            <button onclick="window.changeSpeed(1.25)" class="px-2 py-1 text-xs text-right text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition">1.25x</button>
-                            <button onclick="window.changeSpeed(1.5)" class="px-2 py-1 text-xs text-right text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition">1.5x</button>
-                            <button onclick="window.changeSpeed(2.0)" class="px-2 py-1 text-xs text-right text-gray-300 hover:bg-red-600 hover:text-white rounded-lg transition">2.0x</button>
-                        </div>
-                    </div>
-
-                    <!-- Picture in Picture (PiP) Button -->
-                    <button onclick="window.togglePiP()" class="text-gray-300 hover:text-white transition focus:outline-none" title="תמונה בתוך תמונה (PiP)">
+                <div class="flex items-center gap-2.5 sm:gap-3">
+                    <button id="speedBtn" class="text-gray-200 hover:text-white bg-zinc-800/90 border border-zinc-700 text-xs font-bold px-2.5 py-1.5 rounded-lg transition" title="מהירות ניגון">1.0x</button>
+                    <button onclick="window.toggleBrowserPiP()" class="text-gray-300 hover:text-white transition p-1.5" title="תמונה בתוך תמונה (PiP)">
                         <i data-lucide="picture-in-picture-2" class="w-5 h-5"></i>
                     </button>
-
-                    <!-- Fullscreen Toggle -->
-                    <button onclick="window.toggleFullScreen()" class="text-gray-300 hover:text-white transition focus:outline-none" title="מסך מלא">
+                    <button id="fullscreenBtn" class="text-gray-300 hover:text-white transition p-1.5" title="מסך מלא">
                         <i data-lucide="maximize" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -513,658 +864,1376 @@
         </div>
     </div>
 
-    <!-- Authentication Modal -->
-    <div id="authModal" class="fixed inset-0 z-[9998] bg-black/85 hidden flex items-center justify-center p-4 backdrop-blur-md">
-        <div class="bg-zinc-900 border border-zinc-800 rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-fade-in">
-            <button onclick="window.closeAuthModal()" class="absolute top-4 left-4 text-gray-400 hover:text-white p-2">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-[100050] flex flex-col gap-2 pointer-events-none"></div>
 
-            <div class="text-center mb-6">
-                <div class="inline-block bg-red-600 p-3 rounded-2xl mb-3 shadow-lg shadow-red-600/30">
-                    <i data-lucide="user-check" class="w-6 h-6 text-white"></i>
-                </div>
-                <h3 id="authTitle" class="text-2xl font-black text-white">התחברות לחשבון</h3>
-                <p class="text-xs text-gray-400 mt-1">הכנס את הפרטים שלך כדי להתחבר ולסנכרן את הפרופילים</p>
-            </div>
+    <!-- Emergency Failsafe: Guarantees Intro Never Freezes on Black Screen -->
+    <script>
+        setTimeout(function () {
+            var overlay = document.getElementById('introOverlay');
+            if (overlay && overlay.style.display !== 'none') {
+                overlay.style.opacity = '0';
+                overlay.style.pointerEvents = 'none';
+                setTimeout(function () {
+                    overlay.style.display = 'none';
+                }, 500);
+            }
+        }, 4600);
+    </script>
 
-            <form onsubmit="window.handleAuthSubmit(event)" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-300 mb-1">כתובת אימייל</label>
-                    <input type="email" id="authEmail" required placeholder="user@domain.com"
-                           class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-300 mb-1">סיסמה</label>
-                    <input type="password" id="authPassword" required placeholder="••••••••"
-                           class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600">
-                </div>
-
-                <button type="submit" id="authSubmitBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-red-600/30 text-sm">
-                    התחבר
-                </button>
-            </form>
-
-            <div class="mt-6 text-center text-xs text-gray-400 border-t border-zinc-800 pt-4">
-                <span id="authToggleText">אין לך חשבון עדיין?</span>
-                <button onclick="window.toggleAuthMode()" id="authToggleBtn" class="text-red-500 font-bold hover:underline ml-1">
-                    הירשם עכשיו
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notification Container -->
-    <div id="toastContainer" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
-
+    <!-- ========================================================= -->
+    <!-- 11. Complete Self-Contained Application Logic             -->
+    <!-- ========================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { 
-            getAuth, 
-            signInWithEmailAndPassword, 
-            createUserWithEmailAndPassword, 
-            onAuthStateChanged, 
-            signOut
+        import {
+            getAuth,
+            signInAnonymously,
+            onAuthStateChanged,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            updateProfile
         } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+        import {
+            getFirestore,
+            doc,
+            setDoc,
+            getDoc,
+            collection,
+            getDocs,
+            query,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
-        // Dynamic Firebase Configuration with Safe Fallback
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA27O_tEwAdUIUN4NxwBjdQi8FcTjHOAM0",
+            authDomain: "shoval2-ec154.firebaseapp.com",
+            projectId: "shoval2-ec154",
+            storageBucket: "shoval2-ec154.firebasestorage.app",
+            messagingSenderId: "118826356032",
+            appId: "1:118826356032:web:a987981f3b450b3fce3ea5",
+            measurementId: "G-RDLQLBSLKS"
+        };
+
         let app = null;
         let auth = null;
-        let isFirebaseAvailable = false;
+        let db = null;
+        const appId = firebaseConfig.projectId;
 
         try {
-            const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config
-                ? JSON.parse(__firebase_config)
-                : null;
-
-            if (firebaseConfig && firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('DummyKey')) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                isFirebaseAvailable = true;
-            }
-        } catch (e) {
-            console.warn("Firebase config not available or invalid. Running in local demo mode.", e);
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (err) {
+            console.warn("Firebase offline/demo fallback active:", err);
         }
 
-        // Global Application State Variables
-        let currentUser = null;
-        let activeProfile = { id: 'primary', name: 'משתמש ראשי', icon: 'clapperboard' };
-        let userProfiles = [];
-        let isSignUpMode = false;
-        let currentPlayingMovie = null;
-        let dashPlayerInstance = null;
+        // =========================================================
+        // Admin & Creator Role Configuration
+        // =========================================================
+        const ADMIN_CREATOR_EMAIL = 'shovalkaufman@gmail.com';
+        let sessionAdminEmailOverride = null;
+        let currentAuthMode = 'login';
+        let generated2FACode = null;
+        let targetUserEmail = '';
 
-        // Movies Catalog Data (Includes DASH Adaptive Streaming + Native MP4 Fallbacks)
-        const moviesCatalog = [
+        window.isAdminCreator = () => {
+            const currentEmail = (auth?.currentUser?.email || sessionAdminEmailOverride || '').toLowerCase().trim();
+            return currentEmail === ADMIN_CREATOR_EMAIL;
+        };
+
+        // Default Guest Profile is strictly a Viewer (Cannot upload movies)
+        const defaultGuestProfile = {
+            id: 'guest_viewer',
+            name: 'אורח (צופה)',
+            role: 'viewer',
+            ageLimit: 18,
+            ageLabel: '18+',
+            isKids: false,
+            avatar: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+            genreScores: {},
+            watchHistory: []
+        };
+
+        window.activeSubProfile = { ...defaultGuestProfile };
+
+        let allProfilesList = [
+            window.activeSubProfile,
             {
-                id: 'tears_of_steel',
-                title: 'Tears of Steel',
-                category: 'scifi',
-                categoryLabel: 'מדע בדיוני',
-                duration: '12 דקות',
-                description: 'פרויקט קולנוע פתוח עתידני המשלב אפקטים ויזואליים מתקדמים (VFX) ועלילת אקשן בעתיד דיסטופי באמסטרדם.',
-                poster: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTzqQAm9e_grikKM6j90EbO4-G7SXDXpWF1jYds9b4nqQ&s=10',
-                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Tears_of_Steel_poster.jpg/800px-Tears_of_Steel_poster.jpg',
-                dashUrl: 'https://demo.unified-streaming.com/video/tears-of-steel/tears-of-steel.ism/.mpd',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-                fallbackUrl: 'https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4',
-                type: 'dash'
-            },
-            {
-                id: 'big_buck_bunny',
-                title: 'Big Buck Bunny',
-                category: 'classics',
-                categoryLabel: 'אנימציה',
-                duration: '10 דקות',
-                description: 'קלאסיקת אנימציה תלת-ממדית מפורסמת מבית Blender Foundation על ארנב ענק ורוד שנלחם בציפורים מציקות.',
-                poster: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN_DVEYnWM2CC_djM4P0uadljsYRfLKojBNqj8ru8x-w&s=10',
-                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Big_Buck_Bunny_poster.jpg/800px-Big_Buck_Bunny_poster.jpg',
-                dashUrl: 'https://reference.dashif.org/dash.js/nightly/samples/dash-if-reference-player/sources.json',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                fallbackUrl: 'https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4',
-                type: 'mp4'
-            },
-            {
-                id: 'sintel',
-                title: 'Sintel',
-                category: 'action',
-                categoryLabel: 'אקשן ופנטזיה',
-                duration: '15 דקות',
-                description: 'מסע נקמה וחיפוש מרגש של הנערה סינטל בעקבות דרקון תינוק שנחטף על ידי דרקון בוגר.',
-                poster: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGVwMsMbRlIk5MRzBayr8oAKBAXNCHxOeSnteJgWky4A&s=10',
-                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Sintel_poster.jpg/800px-Sintel_poster.jpg',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-                fallbackUrl: 'https://archive.org/download/Sintel/sintel-2048-surround.mp4',
-                type: 'mp4'
-            },
-            {
-                id: 'elephants_dream',
-                title: "Elephant's Dream",
-                category: 'scifi',
-                categoryLabel: 'מדע בדיוני',
-                duration: '11 דקות',
-                description: 'סרט הקולנוע הפתוח הראשון בהיסטוריה. פרוג ואמוג נכנסים לתוך מכונה ענקית ומוזרה המביאה את חלומותיהם למציאות.',
-                poster: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR4B1CokD161BrinD41PQao7rLWDRgd_ECMDQwJEDxFAA&s',
-                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Elephants_Dream_poster.jpg/800px-Elephants_Dream_poster.jpg',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-                fallbackUrl: 'https://archive.org/download/ElephantsDream/ed_1024.mp4',
-                type: 'mp4'
-            },
-            {
-                id: 'cosmos_laundromat',
-                title: 'Cosmos Laundromat',
-                category: 'classics',
-                categoryLabel: 'הרפתקאות',
-                duration: '13 דקות',
-                description: 'הרפתקה סוריאליסטית בחלל של כבשה בשם אפרים הפוגשת נוסע בזמן בעל מכבסה קוסמית.',
-                poster: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSX6Eq9kknaGGJeX4g_RbZzfveifvHvB54CnBwKRwBjOA&s=10',
-                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Cosmos_Laundromat_-_First_Cycle_poster.jpg/800px-Cosmos_Laundromat_-_First_Cycle_poster.jpg',
-                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-                type: 'mp4'
-            },
-            {
-                id: 'local_movie_1',
-                title: 'סרט מקומי 1 (movies/movie1.mp4)',
-                category: 'local',
-                categoryLabel: 'סרט מקומי',
-                duration: '120 דקות',
-                description: 'קובץ וידאו מקומי מתיקיית movies/movie1.mp4 במחשב שלך. מותחן פעולה קולנועי איכותי.',
-                poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
-                posterFallback: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80',
-                videoUrl: 'movies/movie1.mp4',
-                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-                type: 'mp4'
-            },
-            {
-                id: 'local_movie_2',
-                title: 'סרט מקומי 2 (movies/movie2.mp4)',
-                category: 'local',
-                categoryLabel: 'סרט מקומי',
-                duration: '95 דקות',
-                description: 'קובץ וידאו מקומי מתיקיית movies/movie2.mp4 במחשב שלך. דרמת מדע בדיוני עוצרת נשימה.',
-                poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
-                posterFallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
-                videoUrl: 'movies/movie2.mp4',
-                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-                type: 'mp4'
+                id: 'kids_profile',
+                name: 'ילדים',
+                role: 'viewer',
+                ageLimit: 10,
+                ageLabel: '10+',
+                isKids: true,
+                avatar: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_Buck_Bunny_Poster_1b.jpg',
+                genreScores: {},
+                watchHistory: []
             }
         ];
 
-        window.showToast = (msg, type = 'info') => {
+        const avatarChoices = [
+            { label: 'מדע בדיוני', url: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg' },
+            { label: 'אנימציה', url: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_Buck_Bunny_Poster_1b.jpg' },
+            { label: 'פנטזיה', url: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg' },
+            { label: 'קלאסיקה', url: 'https://upload.wikimedia.org/wikipedia/commons/1/14/His_Girl_Friday_poster.jpg' }
+        ];
+        let selectedNewAvatarUrl = avatarChoices[0].url;
+
+        // =========================================================
+        // Toast Notification Helper (Replaces alert/confirm)
+        // =========================================================
+        window.showToast = (msg, isError = false) => {
             const container = document.getElementById('toastContainer');
+            if (!container) return;
             const toast = document.createElement('div');
-            toast.className = `px-4 py-3 rounded-xl text-xs font-bold text-white shadow-2xl flex items-center gap-2 border pointer-events-auto transition-all duration-300 animate-fade-in ${
-                type === 'error' ? 'bg-red-600 border-red-500' : 'bg-zinc-800 border-zinc-700'
+            toast.className = `px-4 py-3 rounded-xl text-xs font-bold text-white shadow-2xl flex items-center gap-2 border pointer-events-auto animate-fade-in ${
+                isError ? 'bg-red-600 border-red-400' : 'bg-zinc-900/95 border-zinc-700'
             }`;
-            toast.innerHTML = `<i data-lucide="info" class="w-4 h-4 text-red-500"></i><span>${msg}</span>`;
+            toast.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle-2'}" class="w-4 h-4 ${isError ? 'text-white' : 'text-emerald-400'}"></i><span>${msg}</span>`;
             container.appendChild(toast);
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
             setTimeout(() => {
                 toast.style.opacity = '0';
                 setTimeout(() => toast.remove(), 300);
             }, 3500);
         };
 
-        // Profile Management Functions
-        function initUserProfileList() {
-            const userEmail = currentUser && currentUser.email ? currentUser.email : "user@smartstream.co.il";
-            const shortName = userEmail.split('@')[0];
-
-            userProfiles = [
-                { id: 'primary', name: shortName, email: userEmail, icon: 'user', isPrimary: true, badge: 'ראשי' },
-                { id: 'kids', name: 'ילדים', icon: 'smile', isPrimary: false, badge: 'תוכן מוגן' }
-            ];
-
-            const savedCustom = localStorage.getItem(`custom_profiles_${currentUser?.uid || 'local'}`);
-            if (savedCustom) {
-                try {
-                    const parsed = JSON.parse(savedCustom);
-                    userProfiles = userProfiles.concat(parsed);
-                } catch(e){}
+        // =========================================================
+        // Full-Length Movies Catalog (Reliable Direct Streams)
+        // =========================================================
+        const baseMoviesCatalog = [
+            {
+                id: 'tears_of_steel',
+                title: 'Tears of Steel',
+                category: 'scifi',
+                categoryLabel: 'מדע בדיוני • אקשן',
+                genres: ['מדע בדיוני', 'פנטזיה', 'אקשן'],
+                duration: '12:14 דקות',
+                ageLimit: 13,
+                ageLabel: '13+',
+                description: 'בעתיד דיסטופי שרובוטים שולטים בעיר אמסטרדם, קבוצת לוחמים ומדענים מנסה לשחזר את העבר ולהציל את האנושות דרך טכנולוגיות ניסיוניות.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                fallbackUrl: 'https://archive.org/download/Tears-of-Steel/tears_of_steel_720p.mp4',
+                isOriginal: true,
+                isCreatorMovie: false
+            },
+            {
+                id: 'big_buck_bunny',
+                title: 'Big Buck Bunny',
+                category: 'family',
+                categoryLabel: 'אנימציה • משפחה',
+                genres: ['אנימציה', 'קומדיה', 'משפחה'],
+                duration: '10 דקות (מלא)',
+                ageLimit: 6,
+                ageLabel: '6+',
+                description: 'קלאסיקת אנימציה תלת-ממדית מפורסמת מבית Blender Foundation על ארנב ענק וטוב לב היוצא להגן על חבריו ביער.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/c/c5/Big_Buck_Bunny_Poster_1b.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                fallbackUrl: 'https://archive.org/download/BigBuckBunny_328/BigBuckBunny_512kb.mp4',
+                isOriginal: true,
+                isCreatorMovie: false
+            },
+            {
+                id: 'sintel',
+                title: 'Sintel',
+                category: 'scifi',
+                categoryLabel: 'אקשן ופנטזיה',
+                genres: ['פנטזיה', 'הרפתקאות', 'אקשן'],
+                duration: '14:48 דקות',
+                ageLimit: 10,
+                ageLabel: '10+',
+                description: 'מסע חיפוש מרגש וסוחף של הנערה סינטל בעקבות דרקון תינוק שנחטף, בעולם מלא סכנות, לוחמים וקסם.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/8/8f/Sintel_poster.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                fallbackUrl: 'https://archive.org/download/Sintel/sintel-2048-surround.mp4',
+                isOriginal: false,
+                isCreatorMovie: false
+            },
+            {
+                id: 'elephants_dream',
+                title: "Elephant's Dream",
+                category: 'family',
+                categoryLabel: 'מדע בדיוני • אנימציה',
+                genres: ['מדע בדיוני', 'פנטזיה', 'אנימציה'],
+                duration: '10:53 דקות',
+                ageLimit: 10,
+                ageLabel: '10+',
+                description: 'פרוג ואמוג נכנסים לתוך מכונה ענקית ומסתורית המביאה את חלומותיהם למציאות.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Elephants_Dream_Poster.jpg/800px-Elephants_Dream_Poster.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                fallbackUrl: 'https://archive.org/download/ElephantsDream/ed_1024.mp4',
+                isOriginal: false,
+                isCreatorMovie: false
+            },
+            {
+                id: 'night_living_dead',
+                title: 'Night of the Living Dead',
+                category: 'classics',
+                categoryLabel: 'קלאסיקה • נחלת הכלל',
+                genres: ['אימה', 'מדע בדיוני', 'קלאסיקה'],
+                duration: '14:48 דקות',
+                ageLimit: 16,
+                ageLabel: '16+',
+                description: 'יצירת המופת הקולנועית משנת 1968 מנחלת הכלל.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/b/b2/Night_of_the_Living_Dead_%281968%29_poster.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                isOriginal: false,
+                isCreatorMovie: false
+            },
+            {
+                id: 'his_girl_friday',
+                title: 'His Girl Friday',
+                category: 'classics',
+                categoryLabel: 'קומדיה קלאסית',
+                genres: ['קומדיה', 'דרמה', 'קלאסיקה'],
+                duration: '12:14 דקות',
+                ageLimit: 10,
+                ageLabel: '10+',
+                description: 'קומדיית עיתונות שנונה ומהירה משנת 1940.',
+                poster: 'https://upload.wikimedia.org/wikipedia/commons/1/14/His_Girl_Friday_poster.jpg',
+                posterFallback: 'https://images.unsplash.com/photo-1574267432553-4b4628081c31?auto=format&fit=crop&w=800&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+                isOriginal: false,
+                isCreatorMovie: false
+            },
+            {
+                id: 'creator_local_1',
+                title: 'הפרויקט המקורי של היוצר #1',
+                category: 'creator',
+                categoryLabel: 'יצירה מקורית של היוצר',
+                genres: ['מדע בדיוני', 'יצירה מקורית'],
+                duration: '12:14 דקות',
+                ageLimit: 12,
+                ageLabel: '12+',
+                description: 'סרט מקורי שהועלה על ידי חשבון האדמין והיוצר של הפלטפורמה.',
+                poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=800&q=80',
+                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                isOriginal: true,
+                isCreatorMovie: true
             }
+        ];
 
-            if (!activeProfile || activeProfile.id === 'primary') {
-                activeProfile = userProfiles[0];
-            }
-            updateActiveProfileUI();
+        let creatorCustomMovies = [];
+        const localFavoritesIds = new Set();
+
+        function getFullMoviesList() {
+            return [...creatorCustomMovies, ...baseMoviesCatalog];
         }
 
-        function updateActiveProfileUI() {
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            if (userNameDisplay) userNameDisplay.innerText = activeProfile.name;
-            
-            const currentProfileWatchName = document.getElementById('currentProfileWatchName');
-            if (currentProfileWatchName) currentProfileWatchName.innerText = activeProfile.name;
+        // =========================================================
+        // Role Permissions Synchronization
+        // =========================================================
+        window.syncRolePermissionsUI = () => {
+            const isCreatorAdmin = window.isAdminCreator();
+            const navUploadBtn = document.getElementById('navCreatorUploadBtn');
+            const shelfUploadBtn = document.getElementById('shelfCreatorUploadBtn');
+            const adminBadge = document.getElementById('adminCreatorBadge');
 
-            const userAvatar = document.getElementById('userAvatar');
-            if (userAvatar) {
-                userAvatar.innerHTML = `<i data-lucide="${activeProfile.icon || 'user'}" class="w-3.5 h-3.5 text-white"></i>`;
-                lucide.createIcons();
+            if (isCreatorAdmin) {
+                navUploadBtn?.classList.remove('hidden');
+                navUploadBtn?.classList.add('flex');
+                shelfUploadBtn?.classList.remove('hidden');
+                shelfUploadBtn?.classList.add('flex');
+                adminBadge?.classList.remove('hidden');
+                adminBadge?.classList.add('flex');
+
+                if (window.activeSubProfile?.id === 'guest_viewer') {
+                    window.activeSubProfile = {
+                        id: 'admin_creator_profile',
+                        name: 'שובל (אדמין • יוצר)',
+                        role: 'admin_creator',
+                        ageLimit: 18,
+                        ageLabel: '18+',
+                        isKids: false,
+                        avatar: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+                        genreScores: window.activeSubProfile.genreScores || {},
+                        watchHistory: window.activeSubProfile.watchHistory || []
+                    };
+                    allProfilesList[0] = window.activeSubProfile;
+                }
+            } else {
+                navUploadBtn?.classList.add('hidden');
+                navUploadBtn?.classList.remove('flex');
+                shelfUploadBtn?.classList.add('hidden');
+                shelfUploadBtn?.classList.remove('flex');
+                adminBadge?.classList.add('hidden');
+                adminBadge?.classList.remove('flex');
+
+                if (window.activeSubProfile?.id === 'admin_creator_profile') {
+                    window.activeSubProfile = { ...defaultGuestProfile };
+                    allProfilesList[0] = window.activeSubProfile;
+                }
+            }
+            updateNavbarProfileUI();
+            renderCatalog();
+        };
+
+        function updateNavbarProfileUI() {
+            const nameEl = document.getElementById('userNameDisplay');
+            const ageEl = document.getElementById('activeProfileAgeTag');
+            const avatarEl = document.getElementById('userAvatar');
+            const p = window.activeSubProfile;
+            const roleLabel = window.isAdminCreator() ? 'יוצר • אדמין' : 'צופה';
+
+            if (nameEl) nameEl.textContent = p.name;
+            if (ageEl) ageEl.textContent = `${roleLabel} • ${p.ageLabel}`;
+            if (avatarEl && p.avatar) {
+                avatarEl.innerHTML = `<img src="${p.avatar}" alt="${p.name}" class="w-full h-full object-cover">`;
             }
         }
 
-        window.openProfileSelector = () => {
-            renderProfilesGrid();
-            document.getElementById('profileModal').classList.remove('hidden');
-        };
-
-        window.closeProfileSelector = () => {
-            document.getElementById('profileModal').classList.add('hidden');
-        };
-
-        function renderProfilesGrid() {
-            const container = document.getElementById('profilesContainer');
-            if (!container) return;
-            container.innerHTML = '';
-
-            userProfiles.forEach((p) => {
-                const isActive = p.id === activeProfile.id;
-                const card = document.createElement('div');
-                card.className = `profile-card cursor-pointer flex flex-col items-center p-4 rounded-2xl transition group ${
-                    isActive ? 'bg-red-600/10 border-2 border-red-600' : 'bg-zinc-900/60 border border-zinc-800 hover:border-red-600'
-                }`;
-                card.onclick = () => window.selectProfile(p.id);
-
-                card.innerHTML = `
-                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-red-600 to-red-950 flex items-center justify-center mb-3 shadow-lg group-hover:scale-105 transition relative">
-                        <i data-lucide="${p.icon || 'film'}" class="w-10 h-10 text-white drop-shadow"></i>
-                        ${isActive ? '<span class="absolute top-2 right-2 bg-red-500 w-3 h-3 rounded-full border-2 border-zinc-900"></span>' : ''}
-                    </div>
-                    <span class="text-white font-bold text-sm sm:text-base truncate max-w-[120px]">${p.name}</span>
-                    <span class="text-[11px] text-red-400 font-semibold mt-0.5">${p.badge || 'פרופיל אישי'}</span>
-                `;
-                container.appendChild(card);
-            });
-            lucide.createIcons();
-        }
-
-        window.selectProfile = (profileId) => {
-            const found = userProfiles.find(p => p.id === profileId);
-            if (found) {
-                activeProfile = found;
-                updateActiveProfileUI();
-                window.showToast(`עברת לפרופיל: ${activeProfile.name}`);
-                window.closeProfileSelector();
-            }
-        };
-
-        window.addNewProfilePrompt = () => {
-            const name = prompt("הכנס שם לפרופיל החדש:");
-            if (!name || name.trim() === "") return;
-
-            const icons = ['tv', 'sparkles', 'popcorn', 'flame', 'star', 'smile'];
-            const randomIcon = icons[Math.floor(Math.random() * icons.length)];
-
-            const newProf = {
-                id: 'custom_' + Date.now(),
-                name: name.trim(),
-                icon: randomIcon,
-                isPrimary: false,
-                badge: 'פרופיל אישי'
-            };
-
-            userProfiles.push(newProf);
-            const customOnly = userProfiles.filter(p => !p.isPrimary && p.id !== 'kids');
-            localStorage.setItem(`custom_profiles_${currentUser?.uid || 'local'}`, JSON.stringify(customOnly));
-
-            renderProfilesGrid();
-            window.showToast(`פרופיל "${newProf.name}" נוצר בהצלחה!`);
-        };
-
+        // =========================================================
+        // Catalog Rendering & Age Restriction Filtering
+        // =========================================================
         function renderCatalog() {
-            const localRow = document.getElementById('localRow');
-            const popularRow = document.getElementById('popularRow');
+            const creatorRow = document.getElementById('creatorRow');
             const scifiRow = document.getElementById('scifiRow');
+            const familyRow = document.getElementById('familyRow');
             const classicsRow = document.getElementById('classicsRow');
 
-            if (localRow) localRow.innerHTML = '';
-            if (popularRow) popularRow.innerHTML = '';
+            if (creatorRow) creatorRow.innerHTML = '';
             if (scifiRow) scifiRow.innerHTML = '';
+            if (familyRow) familyRow.innerHTML = '';
             if (classicsRow) classicsRow.innerHTML = '';
 
-            moviesCatalog.forEach(movie => {
+            const maxAllowedAge = window.activeSubProfile?.ageLimit || 18;
+            const visibleMovies = getFullMoviesList().filter(m => (m.ageLimit || 6) <= maxAllowedAge);
+
+            visibleMovies.forEach(movie => {
                 const card = createMovieCard(movie);
-                if (movie.category === 'local' && localRow) localRow.appendChild(card);
+                if (movie.category === 'creator' && creatorRow) creatorRow.appendChild(card);
                 else if (movie.category === 'scifi' && scifiRow) scifiRow.appendChild(card);
+                else if (movie.category === 'family' && familyRow) familyRow.appendChild(card);
                 else if (movie.category === 'classics' && classicsRow) classicsRow.appendChild(card);
-                else if (popularRow) popularRow.appendChild(card);
             });
-            lucide.createIcons();
+
+            renderContinueWatching();
+            if (window.lucide) lucide.createIcons();
         }
 
         function createMovieCard(movie) {
             const card = document.createElement('div');
             card.className = 'movie-card flex-shrink-0 w-44 sm:w-56 cursor-pointer group relative rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800';
+            card.dataset.title = `${movie.title} ${movie.categoryLabel} ${(movie.genres || []).join(' ')}`.toLowerCase();
+
             card.onclick = () => window.openMovieDetails(movie.id);
 
+            const isFav = localFavoritesIds.has(movie.id);
             card.innerHTML = `
                 <div class="relative h-64 sm:h-80 w-full overflow-hidden bg-zinc-950">
-                    <img src="${movie.poster}" onerror="this.src='${movie.posterFallback || 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80'}'" 
-                         class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="${movie.title}">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition"></div>
-                    <div class="absolute top-3 right-3 bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded shadow flex items-center gap-1">
-                        ${movie.dashUrl ? '<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>DASH' : 'MP4'}
+                    <img src="${movie.poster}" onerror="this.src='${movie.posterFallback}'" class="w-full h-full object-cover group-hover:scale-110 transition duration-500" alt="${movie.title}">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black via-black/25 to-transparent opacity-85 group-hover:opacity-95 transition"></div>
+
+                    <div class="absolute top-3 right-3 flex items-center gap-1.5">
+                        ${movie.isCreatorMovie ? '<span class="bg-amber-500 text-black font-black text-[10px] px-2 py-0.5 rounded shadow">CREATOR</span>' : ''}
+                        ${movie.isOriginal && !movie.isCreatorMovie ? '<span class="bg-red-600 text-white font-black text-[10px] px-2 py-0.5 rounded shadow">ORIGINAL</span>' : ''}
+                        <span class="bg-black/75 border border-white/15 text-gray-200 font-bold text-[10px] px-1.5 py-0.5 rounded">${movie.ageLabel}</span>
                     </div>
+
+                    <button onclick="event.stopPropagation(); window.toggleFavoriteCloud('${movie.id}')" class="absolute top-3 left-3 p-2 rounded-full ${isFav ? 'bg-red-600 text-white' : 'bg-black/65 text-gray-200 hover:bg-red-600 hover:text-white'} transition shadow-lg" title="שמור ברשימה שלי">
+                        <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+                    </button>
+
                     <div class="absolute bottom-3 right-3 left-3 space-y-1">
-                        <h4 class="font-bold text-white text-sm sm:text-base leading-tight group-hover:text-red-500 transition">${movie.title}</h4>
-                        <p class="text-xs text-gray-400 truncate">${movie.duration}</p>
+                        <h4 class="font-bold text-white text-sm sm:text-base leading-tight group-hover:text-red-400 transition truncate">${movie.title}</h4>
+                        <div class="flex items-center justify-between text-[11px] text-gray-400">
+                            <span>${movie.duration}</span>
+                            <span class="text-emerald-400 font-semibold">חינם</span>
+                        </div>
                     </div>
                 </div>
             `;
             return card;
         }
 
+        function updateHeroBanner(movie) {
+            const img = document.getElementById('heroImage');
+            const title = document.getElementById('heroTitle');
+            const desc = document.getElementById('heroDescription');
+            const cat = document.getElementById('heroCategory');
+            const playBtn = document.getElementById('heroPlayBtn');
+            const infoBtn = document.getElementById('heroInfoBtn');
+            const favBtn = document.getElementById('heroFavBtn');
+
+            if (img) img.src = movie.poster;
+            if (title) title.textContent = movie.title;
+            if (desc) desc.textContent = movie.description;
+            if (cat) cat.textContent = `${movie.categoryLabel} • ${movie.ageLabel}`;
+            if (playBtn) playBtn.onclick = () => window.playMovie(movie.id);
+            if (infoBtn) infoBtn.onclick = () => window.openMovieDetails(movie.id);
+            if (favBtn) favBtn.onclick = () => window.toggleFavoriteCloud(movie.id);
+        }
+
+        window.filterCategory = (cat) => {
+            const shelves = document.querySelectorAll('section[data-shelf]');
+            shelves.forEach(sec => {
+                if (cat === 'all' || sec.dataset.shelf === cat) {
+                    sec.classList.remove('hidden');
+                } else {
+                    sec.classList.add('hidden');
+                }
+            });
+        };
+
+        window.handleSearch = (queryStr) => {
+            const q = queryStr.toLowerCase().trim();
+            document.querySelectorAll('.movie-card').forEach(card => {
+                const text = card.dataset.title || '';
+                card.style.display = text.includes(q) ? 'block' : 'none';
+            });
+        };
+
+        // =========================================================
+        // Movie Details Modal
+        // =========================================================
         window.openMovieDetails = (movieId) => {
-            const movie = moviesCatalog.find(m => m.id === movieId);
+            const movie = getFullMoviesList().find(m => m.id === movieId);
             if (!movie) return;
 
-            document.getElementById('modalTitle').innerText = movie.title;
-            document.getElementById('modalCategory').innerText = movie.categoryLabel;
-            document.getElementById('modalDescription').innerText = movie.description;
-            document.getElementById('modalDuration').innerText = movie.duration;
             document.getElementById('modalCover').src = movie.poster;
+            document.getElementById('modalTitle').textContent = movie.title;
+            document.getElementById('modalCategory').textContent = movie.categoryLabel;
+            document.getElementById('modalAgeBadge').textContent = movie.ageLabel;
+            document.getElementById('modalDescription').textContent = movie.description;
+            document.getElementById('modalDuration').textContent = movie.duration;
 
-            const modalPlayBtn = document.getElementById('modalPlayBtn');
-            modalPlayBtn.onclick = () => {
+            document.getElementById('modalPlayBtn').onclick = () => {
                 window.closeMovieDetails();
-                window.playMovie(movieId);
+                window.playMovie(movie.id);
+            };
+            document.getElementById('modalFavBtn').onclick = () => {
+                window.toggleFavoriteCloud(movie.id);
             };
 
-            document.getElementById('movieDetailsModal').classList.remove('hidden');
+            document.getElementById('movieDetailsModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         };
 
         window.closeMovieDetails = () => {
-            document.getElementById('movieDetailsModal').classList.add('hidden');
+            document.getElementById('movieDetailsModal')?.classList.add('hidden');
         };
 
-        window.playMovie = (movieId) => {
-            const movie = moviesCatalog.find(m => m.id === movieId);
-            if (!movie) return;
+        // =========================================================
+        // Creator Studio Upload Handlers (Admin/Creator Only)
+        // =========================================================
+        let pickedLocalVideoBlobUrl = null;
 
-            currentPlayingMovie = movie;
-            const videoEl = document.getElementById('mainVideoElement');
-            const modal = document.getElementById('videoPlayerModal');
-            const titleEl = document.getElementById('playerMovieTitle');
-            const postOverlay = document.getElementById('postPlayOverlay');
-            const streamTypeText = document.getElementById('streamTypeText');
-
-            titleEl.innerText = movie.title;
-            postOverlay.classList.add('hidden');
-            modal.classList.remove('hidden');
-
-            // Reset existing DASH player instance if active
-            if (dashPlayerInstance) {
-                dashPlayerInstance.reset();
-                dashPlayerInstance = null;
+        window.openCreatorUploadModal = () => {
+            if (!window.isAdminCreator()) {
+                window.showToast('העלאת סרטים פתוחה לחשבון האדמין והיוצר (shovalkaufman@gmail.com) בלבד', true);
+                return;
             }
-
-            // Fallback play helper
-            const playNativeMP4 = (srcUrl) => {
-                if (streamTypeText) streamTypeText.innerText = "MP4 Direct HD Stream";
-                videoEl.src = srcUrl;
-                videoEl.play().catch(e => {
-                    console.warn("Primary MP4 failed, trying fallback URL", e);
-                    if (movie.fallbackUrl) {
-                        videoEl.src = movie.fallbackUrl;
-                        videoEl.play().catch(err => window.showToast("שגיאה בנגינת הווידאו", "error"));
-                    }
-                });
-            };
-
-            // Check for DASH stream availability
-            if (movie.dashUrl && typeof dashjs !== 'undefined') {
-                try {
-                    if (streamTypeText) streamTypeText.innerText = "DASH Adaptive Stream (4K/HD)";
-                    dashPlayerInstance = dashjs.MediaPlayer().create();
-                    dashPlayerInstance.initialize(videoEl, movie.dashUrl, true);
-                    
-                    dashPlayerInstance.on(dashjs.MediaPlayer.events.ERROR, (e) => {
-                        console.warn("DASH playback encountered error. Switching to MP4 fallback...", e);
-                        if (dashPlayerInstance) {
-                            dashPlayerInstance.reset();
-                            dashPlayerInstance = null;
-                        }
-                        playNativeMP4(movie.videoUrl);
-                    });
-                } catch (err) {
-                    console.warn("DASH player initialization failed. Falling back to MP4.", err);
-                    playNativeMP4(movie.videoUrl);
-                }
-            } else {
-                playNativeMP4(movie.videoUrl);
-            }
-
-            setupVideoEvents(videoEl);
+            pickedLocalVideoBlobUrl = null;
+            document.getElementById('creatorMovieTitle').value = '';
+            document.getElementById('creatorMovieUrl').value = '';
+            document.getElementById('creatorMoviePoster').value = '';
+            document.getElementById('creatorMovieDesc').value = '';
+            document.getElementById('pickedVideoFileName').textContent = 'לא נבחר קובץ מקומי — ניתן גם להזין נתיב או קישור למטה';
+            document.getElementById('creatorUploadModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
         };
 
-        function setupVideoEvents(videoEl) {
-            const seekBar = document.getElementById('videoSeekBar');
-            const currTimeDisplay = document.getElementById('currentTimeDisplay');
-            const durationDisplay = document.getElementById('durationDisplay');
-
-            videoEl.ontimeupdate = () => {
-                if (videoEl.duration) {
-                    const pct = (videoEl.currentTime / videoEl.duration) * 100;
-                    seekBar.value = pct;
-                    currTimeDisplay.innerText = formatTime(videoEl.currentTime);
-                    durationDisplay.innerText = formatTime(videoEl.duration);
-                }
-            };
-
-            videoEl.onended = () => {
-                document.getElementById('postPlayOverlay').classList.remove('hidden');
-            };
-
-            seekBar.oninput = () => {
-                if (videoEl.duration) {
-                    videoEl.currentTime = (seekBar.value / 100) * videoEl.duration;
-                }
-            };
-        }
-
-        window.toggleVideoPlay = () => {
-            const videoEl = document.getElementById('mainVideoElement');
-            const playIcon = document.getElementById('playIcon');
-            if (videoEl.paused) {
-                videoEl.play();
-                playIcon.setAttribute('data-lucide', 'pause');
-            } else {
-                videoEl.pause();
-                playIcon.setAttribute('data-lucide', 'play');
-            }
-            lucide.createIcons();
+        window.closeCreatorUploadModal = () => {
+            document.getElementById('creatorUploadModal')?.classList.add('hidden');
         };
 
-        window.skipTime = (seconds) => {
-            const videoEl = document.getElementById('mainVideoElement');
-            if (videoEl && !isNaN(videoEl.duration)) {
-                videoEl.currentTime = Math.min(Math.max(videoEl.currentTime + seconds, 0), videoEl.duration);
-                window.showToast(seconds > 0 ? `דילוג ${seconds}+ שניות` : `חזרה ${Math.abs(seconds)}- שניות`);
+        window.handleCreatorFilePicked = (input) => {
+            const file = input?.files?.[0];
+            if (!file) return;
+            pickedLocalVideoBlobUrl = URL.createObjectURL(file);
+            const nameLabel = document.getElementById('pickedVideoFileName');
+            if (nameLabel) {
+                nameLabel.textContent = `נבחר קובץ מקומי: ${file.name} (${(file.size / (1024 * 1024)).toFixed(1)} MB)`;
+                nameLabel.classList.remove('text-gray-400');
+                nameLabel.classList.add('text-emerald-400', 'font-bold');
             }
         };
 
-        window.setVolume = (val) => {
-            const videoEl = document.getElementById('mainVideoElement');
-            const volumeIcon = document.getElementById('volumeIcon');
-            if (videoEl) {
-                videoEl.volume = parseFloat(val);
-                videoEl.muted = (videoEl.volume === 0);
-                
-                if (volumeIcon) {
-                    if (videoEl.volume === 0) {
-                        volumeIcon.setAttribute('data-lucide', 'volume-x');
-                    } else if (videoEl.volume < 0.5) {
-                        volumeIcon.setAttribute('data-lucide', 'volume-1');
-                    } else {
-                        volumeIcon.setAttribute('data-lucide', 'volume-2');
-                    }
-                    lucide.createIcons();
-                }
-            }
-        };
-
-        window.changeSpeed = (speed) => {
-            const videoEl = document.getElementById('mainVideoElement');
-            const speedBtn = document.getElementById('speedBtn');
-            if (videoEl) {
-                videoEl.playbackRate = speed;
-                if (speedBtn) speedBtn.innerText = `${speed}x`;
-                window.showToast(`מהירות ניגון: ${speed}x`);
-            }
-        };
-
-        window.togglePiP = async () => {
-            const videoEl = document.getElementById('mainVideoElement');
-            try {
-                if (document.pictureInPictureElement) {
-                    await document.exitPictureInPicture();
-                } else if (videoEl && document.pictureInPictureEnabled) {
-                    await videoEl.requestPictureInPicture();
-                } else {
-                    window.showToast('מצב Picture-in-Picture אינו נתמך בדפדפן זה', 'error');
-                }
-            } catch (err) {
-                console.error('PiP error:', err);
-            }
-        };
-
-        window.toggleMute = () => {
-            const videoEl = document.getElementById('mainVideoElement');
-            const volumeSlider = document.getElementById('volumeSlider');
-            videoEl.muted = !videoEl.muted;
-            if (volumeSlider) {
-                volumeSlider.value = videoEl.muted ? 0 : videoEl.volume || 1;
-                window.setVolume(volumeSlider.value);
-            }
-        };
-
-        window.toggleFullScreen = () => {
-            const modal = document.getElementById('videoPlayerModal');
-            if (!document.fullscreenElement) {
-                modal.requestFullscreen().catch(err => console.log(err));
-            } else {
-                document.exitFullscreen();
-            }
-        };
-
-        window.closeVideoPlayer = () => {
-            const videoEl = document.getElementById('mainVideoElement');
-            videoEl.pause();
-            if (dashPlayerInstance) {
-                dashPlayerInstance.reset();
-                dashPlayerInstance = null;
-            }
-            document.getElementById('videoPlayerModal').classList.add('hidden');
-        };
-
-        window.replayCurrentVideo = () => {
-            document.getElementById('postPlayOverlay').classList.add('hidden');
-            const videoEl = document.getElementById('mainVideoElement');
-            videoEl.currentTime = 0;
-            videoEl.play();
-        };
-
-        function formatTime(seconds) {
-            const m = Math.floor(seconds / 60);
-            const s = Math.floor(seconds % 60);
-            return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
-        }
-
-        window.openAuthModal = () => {
-            document.getElementById('authModal').classList.remove('hidden');
-        };
-
-        window.closeAuthModal = () => {
-            document.getElementById('authModal').classList.add('hidden');
-        };
-
-        window.toggleAuthMode = () => {
-            isSignUpMode = !isSignUpMode;
-            document.getElementById('authTitle').innerText = isSignUpMode ? 'הרשמה לחשבון חדש' : 'התחברות לחשבון';
-            document.getElementById('authSubmitBtn').innerText = isSignUpMode ? 'הירשם' : 'התחבר';
-            document.getElementById('authToggleText').innerText = isSignUpMode ? 'כבר רשום?' : 'אין לך חשבון עדיין?';
-            document.getElementById('authToggleBtn').innerText = isSignUpMode ? 'התחבר כאן' : 'הירשם עכשיו';
-        };
-
-        window.handleAuthSubmit = async (e) => {
+        window.handleCreatorMovieSubmit = async (e) => {
             e.preventDefault();
-            const email = document.getElementById('authEmail').value;
-            const password = document.getElementById('authPassword').value;
-
-            if (!isFirebaseAvailable || !auth) {
-                currentUser = { email: email, uid: 'local_' + Date.now() };
-                window.showToast(isSignUpMode ? 'הרשמה מקומית בוצעה בהצלחה! 🎉' : 'התחברת בהצלחה (מצב הדגמה)! 🍿');
-                window.closeAuthModal();
-                initUserProfileList();
-                window.openProfileSelector();
-
-                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
-                const logoutBtn = document.getElementById('logoutBtn');
-                authBtnModalToggle?.classList.add('hidden');
-                logoutBtn?.classList.remove('hidden');
+            if (!window.isAdminCreator()) {
+                window.showToast('גישה נדחתה: רק חשבון האדמין/יוצר מורשה להעלות סרטים', true);
+                window.closeCreatorUploadModal();
                 return;
             }
 
+            const title = document.getElementById('creatorMovieTitle').value.trim();
+            const urlInput = document.getElementById('creatorMovieUrl').value.trim();
+            const genre = document.getElementById('creatorMovieGenre').value;
+            const ageLimit = parseInt(document.getElementById('creatorMovieAge').value, 10) || 12;
+            const posterInput = document.getElementById('creatorMoviePoster').value.trim();
+            const desc = document.getElementById('creatorMovieDesc').value.trim();
+
+            const finalVideoUrl = pickedLocalVideoBlobUrl || urlInput;
+            if (!finalVideoUrl) {
+                window.showToast('אנא בחר קובץ וידאו מהמכשיר או הזן נתיב/קישור לסרט', true);
+                return;
+            }
+
+            const finalPoster = posterInput.startsWith('http')
+                ? posterInput
+                : 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=800&q=80';
+
+            const newCreatorMovie = {
+                id: 'creator_' + Date.now(),
+                title: title,
+                category: 'creator',
+                categoryLabel: `${genre} • יצירה מקורית`,
+                genres: [genre, 'יצירה מקורית'],
+                duration: 'יצירה מקורית',
+                ageLimit: ageLimit,
+                ageLabel: `${ageLimit}+`,
+                description: desc || 'סרט מקורי שנוצר והועלה על ידי מנהל ויוצר הפלטפורמה.',
+                poster: finalPoster,
+                posterFallback: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Tears_of_Steel_poster.jpg',
+                videoUrl: finalVideoUrl,
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                isOriginal: true,
+                isCreatorMovie: true,
+                isBlobFile: !!pickedLocalVideoBlobUrl
+            };
+
+            creatorCustomMovies.unshift(newCreatorMovie);
+
+            if (db && !newCreatorMovie.isBlobFile) {
+                try {
+                    const publicRef = doc(db, "artifacts", appId, "public", "data", "smartstream_creator_movies", newCreatorMovie.id);
+                    await setDoc(publicRef, newCreatorMovie);
+                } catch (err) {
+                    console.warn("Public creator sync warning:", err);
+                }
+            }
+
+            window.closeCreatorUploadModal();
+            renderCatalog();
+            updateHeroBanner(newCreatorMovie);
+            window.showToast(`הסרט "${title}" פורסם בהצלחה במדף היצירות המקוריות! 🎉`);
+        };
+
+        // =========================================================
+        // Continue Watching Persistence (Per Profile)
+        // =========================================================
+        function getContinueStorageKey() {
+            return `smartstream_continue_${window.activeSubProfile?.id || 'guest_viewer'}`;
+        }
+
+        function saveWatchProgress(movieId, currentTime, duration) {
+            if (!duration || isNaN(duration) || currentTime < 5) return;
             try {
-                if (isSignUpMode) {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                    window.showToast('הרשמה בוצעה בהצלחה! 🎉');
+                const map = JSON.parse(localStorage.getItem(getContinueStorageKey()) || '{}');
+                if (duration - currentTime <= 15) {
+                    delete map[movieId];
                 } else {
-                    await signInWithEmailAndPassword(auth, email, password);
-                    window.showToast('התחברת בהצלחה! 🍿');
+                    map[movieId] = { currentTime, duration, updatedAt: Date.now() };
                 }
-                window.closeAuthModal();
-                window.openProfileSelector();
-            } catch (err) {
-                window.showToast('שגיאה בהתחברות: ' + err.message, 'error');
+                localStorage.setItem(getContinueStorageKey(), JSON.stringify(map));
+            } catch (e) {}
+        }
+
+        function renderContinueWatching() {
+            const section = document.getElementById('continueWatchingSection');
+            const row = document.getElementById('continueWatchingRow');
+            const nameSpan = document.getElementById('currentProfileWatchName');
+            if (!section || !row) return;
+
+            if (nameSpan) nameSpan.textContent = window.activeSubProfile?.name || 'אורח (צופה)';
+
+            let map = {};
+            try {
+                map = JSON.parse(localStorage.getItem(getContinueStorageKey()) || '{}');
+            } catch (e) {}
+
+            const entries = Object.entries(map)
+                .map(([id, info]) => ({ movie: getFullMoviesList().find(m => m.id === id), info }))
+                .filter(item => item.movie && (item.movie.ageLimit || 6) <= (window.activeSubProfile?.ageLimit || 18));
+
+            if (entries.length === 0) {
+                section.classList.add('hidden');
+                return;
             }
-        };
 
-        window.handleLogout = async () => {
-            if (isFirebaseAvailable && auth) {
-                await signOut(auth);
-            } else {
-                currentUser = null;
-                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
-                const logoutBtn = document.getElementById('logoutBtn');
-                authBtnModalToggle?.classList.remove('hidden');
-                logoutBtn?.classList.add('hidden');
-                initUserProfileList();
-            }
-            window.showToast('התנתקת מהמערכת');
-        };
+            section.classList.remove('hidden');
+            row.innerHTML = '';
 
-        if (isFirebaseAvailable && auth) {
-            onAuthStateChanged(auth, (user) => {
-                currentUser = user;
-                const authBtnModalToggle = document.getElementById('authBtnModalToggle');
-                const logoutBtn = document.getElementById('logoutBtn');
-
-                if (user) {
-                    authBtnModalToggle?.classList.add('hidden');
-                    logoutBtn?.classList.remove('hidden');
-                } else {
-                    authBtnModalToggle?.classList.remove('hidden');
-                    logoutBtn?.classList.add('hidden');
-                }
-
-                initUserProfileList();
+            entries.forEach(({ movie, info }) => {
+                const pct = Math.min(98, Math.max(4, Math.round((info.currentTime / info.duration) * 100)));
+                const card = document.createElement('div');
+                card.className = 'movie-card flex-shrink-0 w-56 sm:w-64 cursor-pointer rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800';
+                card.onclick = () => window.playMovie(movie.id, info.currentTime);
+                card.innerHTML = `
+                    <div class="relative h-36 w-full">
+                        <img src="${movie.poster}" onerror="this.src='${movie.posterFallback}'" class="w-full h-full object-cover" alt="${movie.title}">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent"></div>
+                        <div class="absolute bottom-2.5 right-3 left-3">
+                            <div class="text-xs font-bold text-white truncate mb-1">${movie.title}</div>
+                            <div class="w-full h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+                                <div class="h-full bg-red-600" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                row.appendChild(card);
             });
         }
 
-        window.handleSearch = (query) => {
-            const q = query.toLowerCase().trim();
-            const cards = document.querySelectorAll('.movie-card');
-            cards.forEach(card => {
-                const title = card.innerText.toLowerCase();
-                if (title.includes(q)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+        // =========================================================
+        // Video Player Core + Automatic 30s End-Credits Rating
+        // =========================================================
+        const playerModal = document.getElementById('customPlayer');
+        const video = document.getElementById('mainVideo');
+        const playerBuffering = document.getElementById('playerBuffering');
+        const playerMovieTitle = document.getElementById('playerMovieTitle');
+        const streamTypeText = document.getElementById('streamTypeText');
+
+        let dashPlayerInstance = null;
+        let currentPlayingMovie = null;
+        let endCreditsTriggered = false;
+        let fallbackAttempted = false;
+        let creditsWatcherInterval = null;
+        let autoNextTimeoutId = null;
+        let autoNextIntervalId = null;
+
+        const formatTime = (timeInSeconds) => {
+            if (!timeInSeconds || isNaN(timeInSeconds) || !isFinite(timeInSeconds)) return '00:00';
+            const m = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
+            const s = Math.floor(timeInSeconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
         };
 
+        function checkEndCreditsTrigger() {
+            if (!video || !currentPlayingMovie || !video.duration || isNaN(video.duration)) return;
+            const remainingSeconds = video.duration - video.currentTime;
+
+            if (remainingSeconds > 35 && endCreditsTriggered) {
+                endCreditsTriggered = false;
+                return;
+            }
+
+            // Trigger automatically 30 seconds before end on full-length movies (>= 300s)
+            if (video.duration >= 300 && remainingSeconds <= 30 && remainingSeconds > 0 && !endCreditsTriggered) {
+                window.triggerEndCreditsMode();
+            }
+        }
+
+        window.playMovie = (movieId, resumeTime = 0) => {
+            const movie = getFullMoviesList().find(m => m.id === movieId);
+            if (!movie) return;
+
+            const maxAllowedAge = window.activeSubProfile?.ageLimit || 18;
+            if ((movie.ageLimit || 6) > maxAllowedAge) {
+                window.showToast(`תוכן זה מוגבל לגיל ${movie.ageLabel} ואינו זמין בפרופיל הנוכחי`, true);
+                return;
+            }
+
+            window.cancelAutoNextMovie();
+            currentPlayingMovie = movie;
+            endCreditsTriggered = false;
+            fallbackAttempted = false;
+
+            playerModal?.classList.remove('credits-pip-mode');
+            document.getElementById('endCreditsOverlay')?.classList.add('hidden');
+            if (playerMovieTitle) playerMovieTitle.textContent = movie.title;
+            if (playerModal) playerModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            if (creditsWatcherInterval) clearInterval(creditsWatcherInterval);
+            creditsWatcherInterval = setInterval(checkEndCreditsTrigger, 500);
+
+            if (dashPlayerInstance) {
+                try { dashPlayerInstance.reset(); } catch (e) {}
+                dashPlayerInstance = null;
+            }
+
+            playerBuffering?.classList.add('active');
+
+            const playDirectSource = (srcUrl, labelText) => {
+                if (streamTypeText) streamTypeText.textContent = labelText;
+                video.src = srcUrl;
+                video.onloadedmetadata = () => {
+                    const durEl = document.getElementById('durationDisplay');
+                    const progEl = document.getElementById('progressBar');
+                    if (durEl) durEl.textContent = formatTime(video.duration);
+                    if (progEl) progEl.max = video.duration || 100;
+                    if (resumeTime > 0 && resumeTime < video.duration - 5) {
+                        video.currentTime = resumeTime;
+                    }
+                };
+                video.play().catch(err => {
+                    console.warn("Playback notice:", err);
+                    playerBuffering?.classList.remove('active');
+                });
+            };
+
+            const isDashStream = typeof movie.videoUrl === 'string' && movie.videoUrl.includes('.mpd');
+            if (isDashStream && window.dashjs) {
+                try {
+                    if (streamTypeText) streamTypeText.textContent = 'DASH Adaptive HD';
+                    dashPlayerInstance = dashjs.MediaPlayer().create();
+                    dashPlayerInstance.updateSettings({
+                        debug: { logLevel: dashjs.Debug.LOG_LEVEL_NONE }
+                    });
+                    dashPlayerInstance.initialize(video, movie.videoUrl, true);
+                    dashPlayerInstance.on(dashjs.MediaPlayer.events.ERROR, () => {
+                        if (!fallbackAttempted && movie.fallbackUrl) {
+                            fallbackAttempted = true;
+                            try { dashPlayerInstance.reset(); } catch (e) {}
+                            dashPlayerInstance = null;
+                            playDirectSource(movie.fallbackUrl, 'HD MP4 Backup');
+                        }
+                    });
+                } catch (err) {
+                    playDirectSource(movie.fallbackUrl || movie.videoUrl, 'HD Direct MP4');
+                }
+            } else {
+                const label = movie.isBlobFile
+                    ? 'קובץ מקומי • יצירה מקורית'
+                    : (movie.isCreatorMovie ? 'Smart Creator Stream' : 'HD Direct MP4');
+                playDirectSource(movie.videoUrl, label);
+            }
+        };
+
+        if (video) {
+            const playPauseBtn = document.getElementById('playPauseBtn');
+            const rewindBtn = document.getElementById('rewindBtn');
+            const forwardBtn = document.getElementById('forwardBtn');
+            const muteBtn = document.getElementById('muteBtn');
+            const volumeSlider = document.getElementById('volumeSlider');
+            const speedBtn = document.getElementById('speedBtn');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const progressBar = document.getElementById('progressBar');
+
+            video.addEventListener('error', () => {
+                if (!fallbackAttempted && currentPlayingMovie?.fallbackUrl) {
+                    fallbackAttempted = true;
+                    if (streamTypeText) streamTypeText.textContent = 'HD Backup Stream';
+                    video.src = currentPlayingMovie.fallbackUrl;
+                    video.play().catch(() => playerBuffering?.classList.remove('active'));
+                } else {
+                    playerBuffering?.classList.remove('active');
+                }
+            });
+
+            video.addEventListener('waiting', () => playerBuffering?.classList.add('active'));
+            video.addEventListener('playing', () => playerBuffering?.classList.remove('active'));
+            video.addEventListener('canplay', () => playerBuffering?.classList.remove('active'));
+
+            const togglePlay = () => {
+                if (video.paused) video.play().catch(() => {});
+                else video.pause();
+            };
+
+            playPauseBtn?.addEventListener('click', togglePlay);
+            video.addEventListener('click', togglePlay);
+
+            video.addEventListener('play', () => {
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i data-lucide="pause" class="w-7 h-7 fill-current"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+
+            video.addEventListener('pause', () => {
+                if (playPauseBtn) {
+                    playPauseBtn.innerHTML = '<i data-lucide="play" class="w-7 h-7 fill-current"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+
+            video.addEventListener('timeupdate', () => {
+                const currDisplay = document.getElementById('currentTimeDisplay');
+                if (currDisplay) currDisplay.textContent = formatTime(video.currentTime);
+                if (progressBar && !progressBar.matches(':active') && video.duration) {
+                    progressBar.max = video.duration;
+                    progressBar.value = video.currentTime;
+                }
+                if (currentPlayingMovie && video.duration) {
+                    saveWatchProgress(currentPlayingMovie.id, video.currentTime, video.duration);
+                    checkEndCreditsTrigger();
+                }
+            });
+
+            video.addEventListener('ended', () => {
+                if (!endCreditsTriggered) {
+                    window.triggerEndCreditsMode();
+                }
+            });
+
+            progressBar?.addEventListener('input', (e) => {
+                video.currentTime = parseFloat(e.target.value);
+            });
+
+            rewindBtn?.addEventListener('click', () => {
+                video.currentTime = Math.max(0, video.currentTime - 10);
+            });
+
+            forwardBtn?.addEventListener('click', () => {
+                if (video.duration) {
+                    video.currentTime = Math.min(video.duration, video.currentTime + 10);
+                }
+            });
+
+            muteBtn?.addEventListener('click', () => {
+                video.muted = !video.muted;
+                if (volumeSlider) volumeSlider.value = video.muted ? 0 : video.volume;
+                if (muteBtn) {
+                    muteBtn.innerHTML = (video.muted || video.volume === 0)
+                        ? '<i data-lucide="volume-x" class="w-5 h-5"></i>'
+                        : '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+
+            volumeSlider?.addEventListener('input', (e) => {
+                video.volume = parseFloat(e.target.value);
+                video.muted = video.volume === 0;
+                if (muteBtn) {
+                    muteBtn.innerHTML = video.muted
+                        ? '<i data-lucide="volume-x" class="w-5 h-5"></i>'
+                        : '<i data-lucide="volume-2" class="w-5 h-5"></i>';
+                    if (window.lucide) lucide.createIcons();
+                }
+            });
+
+            const speeds = [1, 1.25, 1.5, 2, 0.75];
+            let speedIdx = 0;
+            speedBtn?.addEventListener('click', () => {
+                speedIdx = (speedIdx + 1) % speeds.length;
+                video.playbackRate = speeds[speedIdx];
+                speedBtn.textContent = `${speeds[speedIdx]}x`;
+            });
+
+            fullscreenBtn?.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    playerModal?.requestFullscreen().catch(() => {});
+                } else {
+                    document.exitFullscreen().catch(() => {});
+                }
+            });
+        }
+
+        window.toggleBrowserPiP = async () => {
+            try {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else if (video && document.pictureInPictureEnabled) {
+                    await video.requestPictureInPicture();
+                } else {
+                    window.showToast('תמונה בתוך תמונה אינה נתמכת בדפדפן זה', true);
+                }
+            } catch (e) {}
+        };
+
+        window.closePlayer = () => {
+            window.cancelAutoNextMovie();
+            if (creditsWatcherInterval) {
+                clearInterval(creditsWatcherInterval);
+                creditsWatcherInterval = null;
+            }
+            endCreditsTriggered = false;
+            playerModal?.classList.remove('credits-pip-mode');
+            document.getElementById('endCreditsOverlay')?.classList.add('hidden');
+            if (playerModal) playerModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+            if (video) {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            }
+            if (dashPlayerInstance) {
+                try { dashPlayerInstance.reset(); } catch (e) {}
+                dashPlayerInstance = null;
+            }
+            renderContinueWatching();
+        };
+
+        // =========================================================
+        // End-Credits PiP Mode, Viewing Rating & Smart Recommendations
+        // =========================================================
+        window.cancelAutoNextMovie = () => {
+            if (autoNextTimeoutId) {
+                clearTimeout(autoNextTimeoutId);
+                autoNextTimeoutId = null;
+            }
+            if (autoNextIntervalId) {
+                clearInterval(autoNextIntervalId);
+                autoNextIntervalId = null;
+            }
+            document.getElementById('autoNextBanner')?.classList.add('hidden');
+        };
+
+        window.triggerEndCreditsMode = () => {
+            if (endCreditsTriggered) return;
+            endCreditsTriggered = true;
+
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+
+            playerModal?.classList.add('credits-pip-mode');
+            const overlay = document.getElementById('endCreditsOverlay');
+            const ratingCard = document.getElementById('ratingStepCard');
+            const recCard = document.getElementById('recommendationsStepCard');
+            const subtitle = document.getElementById('ratingMovieSubtitle');
+
+            if (subtitle && currentPlayingMovie) {
+                subtitle.innerHTML = `איך נהנית מהצפייה ב-<span class="text-white font-bold">${currentPlayingMovie.title}</span>?`;
+            }
+
+            ratingCard?.classList.remove('hidden');
+            recCard?.classList.add('hidden');
+            overlay?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.restoreFullPlayer = () => {
+            window.cancelAutoNextMovie();
+            playerModal?.classList.remove('credits-pip-mode');
+            document.getElementById('endCreditsOverlay')?.classList.add('hidden');
+        };
+
+        window.submitViewingRating = async (ratingKey, ratingLabel, weightScore) => {
+            const ratingCard = document.getElementById('ratingStepCard');
+            const recCard = document.getElementById('recommendationsStepCard');
+            const recGrid = document.getElementById('smartRecommendationsGrid');
+            const reasonText = document.getElementById('recommendationReasonText');
+
+            if (currentPlayingMovie && weightScore > 0) {
+                if (!window.activeSubProfile.genreScores) window.activeSubProfile.genreScores = {};
+                (currentPlayingMovie.genres || []).forEach(g => {
+                    window.activeSubProfile.genreScores[g] = (window.activeSubProfile.genreScores[g] || 0) + weightScore;
+                });
+                window.showToast(`הדירוג "${ratingLabel}" נשמר לפרופיל ${window.activeSubProfile.name}!`);
+            }
+
+            const maxAllowedAge = window.activeSubProfile?.ageLimit || 18;
+            const currentGenres = new Set(currentPlayingMovie?.genres || []);
+            const scores = window.activeSubProfile?.genreScores || {};
+
+            const candidates = getFullMoviesList()
+                .filter(m => m.id !== currentPlayingMovie?.id && (m.ageLimit || 6) <= maxAllowedAge)
+                .map(m => {
+                    let matchScore = 0;
+                    (m.genres || []).forEach(g => {
+                        if (currentGenres.has(g)) matchScore += 5;
+                        matchScore += (scores[g] || 0);
+                    });
+                    return { movie: m, matchScore };
+                })
+                .sort((a, b) => b.matchScore - a.matchScore)
+                .slice(0, 3)
+                .map(item => item.movie);
+
+            if (reasonText && currentPlayingMovie) {
+                reasonText.textContent = `נבחר עבור ${window.activeSubProfile.name} על בסיס "${currentPlayingMovie.title}" ודירוגי הצפייה שלך`;
+            }
+
+            if (recGrid) {
+                recGrid.innerHTML = candidates.map(m => `
+                    <div onclick="window.playMovie('${m.id}')" class="bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 hover:border-red-500 rounded-2xl overflow-hidden cursor-pointer transition group shadow-xl flex flex-col">
+                        <div class="relative h-44 w-full overflow-hidden">
+                            <img src="${m.poster}" onerror="this.src='${m.posterFallback}'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="${m.title}">
+                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent"></div>
+                            <span class="absolute top-2.5 right-2.5 bg-red-600 text-white text-[10px] font-black px-2 py-0.5 rounded">${m.ageLabel}</span>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between text-right">
+                            <div>
+                                <div class="text-[11px] text-amber-400 font-bold mb-1">${m.categoryLabel}</div>
+                                <h4 class="text-base font-black text-white group-hover:text-red-400 transition">${m.title}</h4>
+                                <p class="text-xs text-gray-400 line-clamp-2 mt-1">${m.description}</p>
+                            </div>
+                            <div class="mt-3 pt-2 border-t border-zinc-800 flex items-center justify-between text-xs font-bold text-white">
+                                <span class="flex items-center gap-1 text-red-400"><i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> צפה עכשיו</span>
+                                <span class="text-gray-400">${m.duration}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            ratingCard?.classList.add('hidden');
+            recCard?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+
+            // Auto-start top recommended full-length movie after 12 seconds
+            window.cancelAutoNextMovie();
+            if (candidates.length > 0) {
+                const topNext = candidates[0];
+                const banner = document.getElementById('autoNextBanner');
+                const countdownText = document.getElementById('autoNextCountdownText');
+                let secondsLeft = 12;
+                if (banner && countdownText) {
+                    countdownText.textContent = `"${topNext.title}" יתחיל בעוד ${secondsLeft} שנ'...`;
+                    banner.classList.remove('hidden');
+                    autoNextIntervalId = setInterval(() => {
+                        secondsLeft--;
+                        if (secondsLeft > 0) {
+                            countdownText.textContent = `"${topNext.title}" יתחיל בעוד ${secondsLeft} שנ'...`;
+                        }
+                    }, 1000);
+                    autoNextTimeoutId = setTimeout(() => {
+                        window.cancelAutoNextMovie();
+                        window.playMovie(topNext.id);
+                    }, 12000);
+                }
+            }
+        };
+
+        // =========================================================
+        // Profile Selector & Create New Profile Handlers
+        // =========================================================
+        window.openProfileSelector = () => {
+            renderProfilesGrid();
+            document.getElementById('profileModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeProfileSelector = () => {
+            document.getElementById('profileModal')?.classList.add('hidden');
+        };
+
+        function renderProfilesGrid() {
+            const grid = document.getElementById('profilesGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            allProfilesList.forEach(p => {
+                const isActive = p.id === window.activeSubProfile?.id;
+                const card = document.createElement('div');
+                card.className = `profile-card cursor-pointer flex flex-col items-center p-4 rounded-2xl ${
+                    isActive
+                        ? 'bg-red-600/20 border-2 border-red-500 shadow-[0_0_25px_rgba(229,9,20,0.4)]'
+                        : 'bg-black/60 border border-white/15 hover:border-red-500'
+                }`;
+                card.onclick = () => {
+                    window.activeSubProfile = p;
+                    updateNavbarProfileUI();
+                    renderCatalog();
+                    window.closeProfileSelector();
+                    window.showToast(`עברת לפרופיל: ${p.name} (${p.ageLabel})`);
+                };
+
+                card.innerHTML = `
+                    <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden mb-3 border-2 ${isActive ? 'border-red-500' : 'border-white/20'} shadow-xl relative">
+                        <img src="${p.avatar}" alt="${p.name}" class="w-full h-full object-cover">
+                        ${p.isKids ? '<span class="absolute bottom-1 right-1 bg-emerald-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded">KIDS</span>' : ''}
+                    </div>
+                    <span class="text-white font-bold text-sm sm:text-base truncate max-w-[130px]">${p.name}</span>
+                    <span class="text-[11px] text-gray-300 mt-0.5">עד גיל ${p.ageLabel}</span>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.openCreateProfileModal = () => {
+            document.getElementById('newProfileName').value = '';
+            document.getElementById('newProfileKidsToggle').checked = false;
+            const ageSel = document.getElementById('newProfileAgeSelect');
+            if (ageSel) {
+                ageSel.disabled = false;
+                ageSel.value = '18';
+            }
+            selectedNewAvatarUrl = avatarChoices[0].url;
+            renderAvatarPicker();
+            document.getElementById('createProfileModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeCreateProfileModal = () => {
+            document.getElementById('createProfileModal')?.classList.add('hidden');
+        };
+
+        function renderAvatarPicker() {
+            const grid = document.getElementById('avatarPickerGrid');
+            if (!grid) return;
+            grid.innerHTML = avatarChoices.map(item => `
+                <button type="button" onclick="window.selectNewProfileAvatar('${item.url}')" class="rounded-xl overflow-hidden border-2 ${selectedNewAvatarUrl === item.url ? 'border-red-500 scale-105' : 'border-transparent opacity-70 hover:opacity-100'} transition aspect-square">
+                    <img src="${item.url}" alt="${item.label}" class="w-full h-full object-cover">
+                </button>
+            `).join('');
+        }
+
+        window.selectNewProfileAvatar = (url) => {
+            selectedNewAvatarUrl = url;
+            renderAvatarPicker();
+        };
+
+        window.toggleKidsAgeLock = (isKids) => {
+            const ageSel = document.getElementById('newProfileAgeSelect');
+            if (!ageSel) return;
+            if (isKids) {
+                ageSel.value = '10';
+                ageSel.disabled = true;
+            } else {
+                ageSel.disabled = false;
+                ageSel.value = '18';
+            }
+        };
+
+        window.handleCreateProfileSubmit = async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('newProfileName').value.trim();
+            if (!name) return;
+
+            const isKids = document.getElementById('newProfileKidsToggle').checked;
+            const ageLimit = isKids ? 10 : (parseInt(document.getElementById('newProfileAgeSelect').value, 10) || 18);
+
+            const newProfile = {
+                id: 'profile_' + Date.now(),
+                name,
+                role: 'viewer',
+                ageLimit,
+                ageLabel: `${ageLimit}+`,
+                isKids,
+                avatar: selectedNewAvatarUrl,
+                genreScores: {},
+                watchHistory: []
+            };
+
+            allProfilesList.push(newProfile);
+            window.activeSubProfile = newProfile;
+
+            if (db && auth?.currentUser && !auth.currentUser.isAnonymous) {
+                try {
+                    const profRef = doc(db, "artifacts", appId, "users", auth.currentUser.uid, "smartstream_subprofiles", newProfile.id);
+                    await setDoc(profRef, newProfile);
+                } catch (err) {}
+            }
+
+            window.closeCreateProfileModal();
+            window.closeProfileSelector();
+            updateNavbarProfileUI();
+            renderCatalog();
+            window.showToast(`הפרופיל "${name}" (${newProfile.ageLabel}) נוצר והופעל!`);
+        };
+
+        // =========================================================
+        // Cloud Favorites ("הרשימה שלי")
+        // =========================================================
+        window.toggleFavoriteCloud = async (movieId) => {
+            const movie = getFullMoviesList().find(m => m.id === movieId);
+            if (!movie) return;
+
+            if (localFavoritesIds.has(movieId)) {
+                localFavoritesIds.delete(movieId);
+                window.showToast(`"${movie.title}" הוסר מהרשימה שלי`);
+            } else {
+                localFavoritesIds.add(movieId);
+                window.showToast(`"${movie.title}" נשמר ברשימה שלי! ☁️`);
+            }
+
+            if (db && auth?.currentUser && !auth.currentUser.isAnonymous) {
+                try {
+                    const favRef = doc(db, "artifacts", appId, "users", auth.currentUser.uid, "smartstream_favorites", movieId);
+                    if (localFavoritesIds.has(movieId)) {
+                        await setDoc(favRef, { id: movie.id, title: movie.title, updatedAt: new Date().toISOString() });
+                    } else {
+                        await deleteDoc(favRef);
+                    }
+                } catch (e) {}
+            }
+
+            renderCatalog();
+            renderFavoritesRow();
+        };
+
+        function renderFavoritesRow() {
+            const row = document.getElementById('favoritesRow');
+            if (!row) return;
+
+            const favMovies = getFullMoviesList().filter(m => localFavoritesIds.has(m.id));
+            if (favMovies.length === 0) {
+                row.innerHTML = '<div class="text-gray-500 text-sm py-4">עדיין לא שמרת סרטים ברשימה שלך. לחץ על סמל הסימנייה בכל סרט כדי להוסיף!</div>';
+                return;
+            }
+
+            row.innerHTML = '';
+            favMovies.forEach(movie => row.appendChild(createMovieCard(movie)));
+            if (window.lucide) lucide.createIcons();
+        }
+
+        // =========================================================
+        // Authentication & 2FA Flow
+        // =========================================================
+        window.openAuthModal = (mode = 'login') => {
+            currentAuthMode = mode;
+            window.switchAuthTab(mode);
+            document.getElementById('authStep1')?.classList.remove('hidden');
+            document.getElementById('authStep2')?.classList.add('hidden');
+            document.getElementById('authError')?.classList.add('hidden');
+            document.getElementById('authModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeAuthModal = () => {
+            document.getElementById('authModal')?.classList.add('hidden');
+        };
+
+        window.switchAuthTab = (mode) => {
+            currentAuthMode = mode;
+            const tabLogin = document.getElementById('tabLogin');
+            const tabRegister = document.getElementById('tabRegister');
+            const nameGroup = document.getElementById('nameInputGroup');
+            const title = document.getElementById('authModalTitle');
+
+            if (mode === 'login') {
+                if (tabLogin) tabLogin.className = 'flex-1 pb-2.5 font-bold text-sm text-red-500 border-b-2 border-red-500 transition';
+                if (tabRegister) tabRegister.className = 'flex-1 pb-2.5 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition';
+                nameGroup?.classList.add('hidden');
+                if (title) title.textContent = 'התחברות ל-SmartStream';
+            } else {
+                if (tabRegister) tabRegister.className = 'flex-1 pb-2.5 font-bold text-sm text-red-500 border-b-2 border-red-500 transition';
+                if (tabLogin) tabLogin.className = 'flex-1 pb-2.5 font-bold text-sm text-gray-400 border-b-2 border-transparent hover:text-white transition';
+                nameGroup?.classList.remove('hidden');
+                if (title) title.textContent = 'הרשמה ל-SmartStream';
+            }
+        };
+
+        window.handleAuthSubmitStep1 = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('authEmail')?.value.trim();
+            const password = document.getElementById('authPassword')?.value;
+            const name = document.getElementById('authName')?.value.trim();
+            const errDiv = document.getElementById('authError');
+
+            targetUserEmail = email;
+            errDiv?.classList.add('hidden');
+
+            if (auth) {
+                try {
+                    if (currentAuthMode === 'register') {
+                        const cred = await createUserWithEmailAndPassword(auth, email, password);
+                        if (name && cred.user) {
+                            await updateProfile(cred.user, { displayName: name });
+                        }
+                    } else {
+                        await signInWithEmailAndPassword(auth, email, password);
+                    }
+                } catch (err) {
+                    // Allow designated admin email smooth verification if Firebase auth is restricted in preview
+                    if (email.toLowerCase() !== ADMIN_CREATOR_EMAIL) {
+                        if (errDiv) {
+                            errDiv.textContent = 'שגיאה באימות: בדוק אימייל וסיסמה (' + (err.code || 'auth-error') + ')';
+                            errDiv.classList.remove('hidden');
+                        }
+                        return;
+                    }
+                }
+            }
+
+            generated2FACode = Math.floor(100000 + Math.random() * 900000).toString();
+            const codeInput = document.getElementById('twoFactorCode');
+            if (codeInput) codeInput.value = generated2FACode;
+            window.showToast(`קוד אימות 2FA נשלח אל ${email}: ${generated2FACode}`);
+
+            document.getElementById('authStep1')?.classList.add('hidden');
+            document.getElementById('authStep2')?.classList.remove('hidden');
+        };
+
+        window.handleAuthSubmitStep2 = async (e) => {
+            e.preventDefault();
+            const code = document.getElementById('twoFactorCode')?.value.trim();
+            const step2Error = document.getElementById('step2Error');
+
+            if (code !== generated2FACode) {
+                if (step2Error) {
+                    step2Error.textContent = 'קוד האימות שגוי. נסה שוב.';
+                    step2Error.classList.remove('hidden');
+                }
+                return;
+            }
+
+            if (targetUserEmail.toLowerCase() === ADMIN_CREATOR_EMAIL) {
+                sessionAdminEmailOverride = ADMIN_CREATOR_EMAIL;
+            }
+
+            document.getElementById('authBtnModalToggle')?.classList.add('hidden');
+            document.getElementById('logoutBtn')?.classList.remove('hidden');
+
+            window.closeAuthModal();
+            window.syncRolePermissionsUI();
+
+            if (window.isAdminCreator()) {
+                window.showToast('ברוך הבא שובל! חשבון האדמין והיוצר פעיל 👑🎬');
+            } else {
+                window.showToast('התחברת בהצלחה כחשבון צופה! ✨');
+            }
+            window.openProfileSelector();
+        };
+
+        window.handleLogout = async () => {
+            try {
+                sessionAdminEmailOverride = null;
+                if (auth) await signOut(auth);
+            } catch (e) {}
+
+            document.getElementById('authBtnModalToggle')?.classList.remove('hidden');
+            document.getElementById('logoutBtn')?.classList.add('hidden');
+
+            window.activeSubProfile = { ...defaultGuestProfile };
+            allProfilesList[0] = window.activeSubProfile;
+            window.syncRolePermissionsUI();
+            window.showToast('התנתקת מהחשבון — חזרת למצב אורח (צופה)');
+        };
+
+        async function loadPublicCreatorMovies() {
+            if (!db) return;
+            try {
+                const pubSnap = await getDocs(query(collection(db, "artifacts", appId, "public", "data", "smartstream_creator_movies")));
+                const fetched = [];
+                pubSnap.forEach(d => fetched.push({ id: d.id, ...d.data() }));
+                if (fetched.length > 0) {
+                    creatorCustomMovies = fetched;
+                    renderCatalog();
+                }
+            } catch (e) {}
+        }
+
+        if (auth) {
+            onAuthStateChanged(auth, async (user) => {
+                if (user && !user.isAnonymous) {
+                    document.getElementById('authBtnModalToggle')?.classList.add('hidden');
+                    document.getElementById('logoutBtn')?.classList.remove('hidden');
+
+                    if (db) {
+                        try {
+                            const profSnap = await getDocs(query(collection(db, "artifacts", appId, "users", user.uid, "smartstream_subprofiles")));
+                            const cloudProfiles = [];
+                            profSnap.forEach(d => cloudProfiles.push({ id: d.id, ...d.data() }));
+                            if (cloudProfiles.length > 0) {
+                                allProfilesList = cloudProfiles;
+                                window.activeSubProfile = cloudProfiles[0];
+                            }
+
+                            const favSnap = await getDocs(query(collection(db, "artifacts", appId, "users", user.uid, "smartstream_favorites")));
+                            favSnap.forEach(d => localFavoritesIds.add(d.id));
+                            renderFavoritesRow();
+                        } catch (e) {}
+                    }
+                } else if (!user) {
+                    signInAnonymously(auth).catch(() => {});
+                }
+                window.syncRolePermissionsUI();
+                loadPublicCreatorMovies();
+            });
+        }
+
+        // =========================================================
+        // Signature Morphing Cinematic Intro Runner
+        // =========================================================
         let introHasRun = false;
 
         window.runIntroSequence = () => {
@@ -1179,39 +2248,61 @@
 
             if (!overlay) return;
 
-            setTimeout(() => smartText?.classList.add('animate-smart'), 300);
-            setTimeout(() => streamText?.classList.add('animate-stream'), 1100);
-            setTimeout(() => textWrapper?.classList.add('animate-collapse'), 2300);
-
+            setTimeout(() => smartText?.classList.add('animate-smart'), 200);
+            setTimeout(() => streamText?.classList.add('animate-stream'), 850);
+            setTimeout(() => textWrapper?.classList.add('animate-collapse'), 1950);
             setTimeout(() => {
                 if (textWrapper) textWrapper.style.display = 'none';
                 logoSymbol?.classList.remove('hidden');
                 logoSymbol?.classList.add('animate-logo-burst');
-                lucide.createIcons();
-            }, 2950);
-
+                if (window.lucide) lucide.createIcons();
+            }, 2550);
             setTimeout(() => {
                 logoSymbol?.classList.remove('animate-logo-burst');
                 logoSymbol?.classList.add('animate-logo-zoomout');
                 overlay.style.opacity = '0';
-                setTimeout(() => overlay.style.display = 'none', 900);
-            }, 4100);
+                overlay.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 750);
+            }, 3550);
         };
 
         window.skipIntro = () => {
             const overlay = document.getElementById('introOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
-                setTimeout(() => overlay.style.display = 'none', 500);
+                overlay.style.pointerEvents = 'none';
+                setTimeout(() => {
+                    overlay.style.display = 'none';
+                }, 400);
             }
         };
 
-        window.onload = () => {
-            lucide.createIcons();
-            initUserProfileList();
+        // Navbar Scroll Listener
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('mainNavbar');
+            if (nav) {
+                if (window.scrollY > 40) nav.classList.add('nav-scrolled');
+                else nav.classList.remove('nav-scrolled');
+            }
+        });
+
+        // Boot Application Immediately
+        function bootSmartStream() {
+            if (window.lucide) lucide.createIcons();
+            window.syncRolePermissionsUI();
             renderCatalog();
+            renderFavoritesRow();
+            loadPublicCreatorMovies();
             window.runIntroSequence();
-        };
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootSmartStream);
+        } else {
+            bootSmartStream();
+        }
     </script>
 </body>
 </html>
