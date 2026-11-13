@@ -389,7 +389,7 @@
     <!-- ========================================================= -->
     <!-- 4. Catalog Shelves                                        -->
     <!-- ========================================================= -->
-    <main class="relative z-20 -mt-8 space-y-10 pb-24 px-4 sm:px-12">
+    <main class="relative z-20 -mt-8 space-y-10 pb-20 px-4 sm:px-12">
         <!-- Continue Watching Shelf -->
         <section id="continueWatchingSection" class="hidden">
             <div class="flex items-center justify-between mb-3">
@@ -455,6 +455,41 @@
             <div id="favoritesRow" class="flex gap-4 overflow-x-auto no-scrollbar py-2"></div>
         </section>
     </main>
+
+    <!-- ========================================================= -->
+    <!-- 4B. Cinematic Footer (Privacy Policy & Terms of Use)      -->
+    <!-- ========================================================= -->
+    <footer class="relative z-20 border-t border-white/10 bg-zinc-950/95 px-6 sm:px-12 py-10 text-gray-400">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="space-y-2">
+                <div class="flex items-center gap-2" dir="ltr">
+                    <div class="bg-red-600 p-1.5 rounded-lg">
+                        <i data-lucide="play" class="w-4 h-4 text-white fill-white"></i>
+                    </div>
+                    <span class="text-lg font-extrabold tracking-tight text-white">SmartStream</span>
+                </div>
+                <p class="text-xs text-gray-400 max-w-md leading-relaxed">
+                    פלטפורמת הסטרימינג החכמה לצפייה בסרטים, סדרות, יצירות מקוריות ותכני נחלת הכלל — עם פרופילי צפייה מותאמים אישית, הגנת גיל וסנכרון ענן מאובטח.
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3 sm:gap-5 text-xs font-bold">
+                <button type="button" onclick="window.openLegalModal('terms')" class="text-gray-300 hover:text-white transition flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-white/10 px-4 py-2.5 rounded-xl">
+                    <i data-lucide="file-text" class="w-4 h-4 text-red-500"></i>
+                    <span>תנאי שימוש (Terms of Use)</span>
+                </button>
+                <button type="button" onclick="window.openLegalModal('privacy')" class="text-gray-300 hover:text-white transition flex items-center gap-1.5 bg-zinc-900 hover:bg-zinc-800 border border-white/10 px-4 py-2.5 rounded-xl">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                    <span>מדיניות פרטיות (Privacy Policy)</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto mt-6 pt-5 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-500">
+            <span>© 2026 SmartStream. כל הזכויות שמורות.</span>
+            <span id="footerConsentStatus" class="text-gray-400">עודכן לאחרונה: נובמבר 2026</span>
+        </div>
+    </footer>
 
     <!-- ========================================================= -->
     <!-- 5. Profile Selector Modal ("מי צופה עכשיו?")              -->
@@ -933,14 +968,14 @@
                 <div class="grid grid-cols-2 gap-2.5 bg-zinc-950 p-1.5 rounded-2xl border border-zinc-800">
                     <label class="cursor-pointer">
                         <input type="radio" name="uploadMediaType" value="movie" checked onchange="window.toggleUploadTypeFields('movie')" class="peer sr-only">
-                        <div class="text-center py-2 rounded-xl text-xs font-black text-gray-400 peer-checked:bg-red-600 peer-checked:text-white transition">
-                            🎬 סרט בודד
+                        <div class="text-center py-2 rounded-xl text-xs font-black text-gray-400 peer-checked:bg-red-600 peer-checked:text-white transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="film" class="w-3.5 h-3.5"></i> סרט בודד
                         </div>
                     </label>
                     <label class="cursor-pointer">
                         <input type="radio" name="uploadMediaType" value="series" onchange="window.toggleUploadTypeFields('series')" class="peer sr-only">
-                        <div class="text-center py-2 rounded-xl text-xs font-black text-gray-400 peer-checked:bg-sky-600 peer-checked:text-white transition">
-                            📺 סדרה (עונות ופרקים)
+                        <div class="text-center py-2 rounded-xl text-xs font-black text-gray-400 peer-checked:bg-sky-600 peer-checked:text-white transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="tv" class="w-3.5 h-3.5"></i> סדרה (עונות ופרקים)
                         </div>
                     </label>
                 </div>
@@ -1067,6 +1102,14 @@
                     <input type="url" id="creatorMovieUrl" placeholder="או הדבק קישור HTTPS לקובץ MP4..." class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs text-white" dir="ltr">
                 </div>
 
+                <!-- Copyright & Terms Confirmation -->
+                <label class="flex items-start gap-2.5 bg-zinc-950/70 border border-zinc-800 p-3 rounded-xl cursor-pointer text-xs text-gray-300">
+                    <input type="checkbox" id="creatorLegalAckCheck" checked required class="mt-0.5 w-4 h-4 accent-amber-500 flex-shrink-0">
+                    <span>
+                        אני מצהיר/ה כי הפרסום עומד ב-<button type="button" onclick="event.preventDefault(); window.openLegalModal('terms')" class="text-amber-400 hover:underline font-bold">תנאי השימוש וזכויות היוצרים</button> וכי שיוך היוצרים מדויק.
+                    </span>
+                </label>
+
                 <!-- Upload Progress Indicator -->
                 <div id="cloudUploadProgressBox" class="hidden space-y-1.5 bg-zinc-950 p-3 rounded-xl border border-amber-500/30">
                     <div class="flex justify-between text-xs font-bold text-amber-300">
@@ -1127,6 +1170,15 @@
                         <label class="block text-xs font-bold text-gray-300 mb-1">סיסמה</label>
                         <input type="password" id="authPassword" required placeholder="••••••••" class="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-red-600" dir="ltr">
                     </div>
+
+                    <!-- Legal Terms & Privacy Policy Agreement -->
+                    <label class="flex items-start gap-2.5 bg-zinc-950/60 border border-zinc-800 p-3 rounded-xl cursor-pointer text-xs text-gray-300">
+                        <input type="checkbox" id="legalConsentCheck" checked required class="mt-0.5 w-4 h-4 accent-red-600 flex-shrink-0">
+                        <span class="leading-relaxed">
+                            אני מאשר/ת כי קראתי והסכמתי ל-<button type="button" onclick="event.preventDefault(); window.openLegalModal('terms')" class="text-red-400 hover:underline font-bold">תנאי השימוש</button> ול-<button type="button" onclick="event.preventDefault(); window.openLegalModal('privacy')" class="text-emerald-400 hover:underline font-bold">מדיניות הפרטיות</button> של SmartStream.
+                        </span>
+                    </label>
+
                     <div id="authErrorMsg" class="hidden text-xs text-red-400 bg-red-500/10 border border-red-500/30 p-2.5 rounded-xl text-center"></div>
                     <button type="submit" id="authSubmitBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition shadow-lg text-sm">
                         המשך לאימות דו-שלבי (2FA)
@@ -1157,11 +1209,151 @@
         </div>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- 12. Legal Modal: Terms of Use & Privacy Policy            -->
+    <!-- ========================================================= -->
+    <div id="legalModal" class="fixed inset-0 z-[10005] bg-black/90 hidden flex items-center justify-center p-4 sm:p-6 backdrop-blur-md">
+        <div class="bg-zinc-900 border border-white/15 rounded-3xl w-full max-w-3xl max-h-[88vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+            <!-- Header & Tabs -->
+            <div class="p-5 sm:p-6 border-b border-zinc-800 bg-zinc-950/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-red-600/20 border border-red-500/40 p-2.5 rounded-2xl text-red-500">
+                        <i data-lucide="scale" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg sm:text-xl font-black text-white">מרכז משפטי — SmartStream</h3>
+                        <p class="text-[11px] text-gray-400">עודכן לאחרונה: נובמבר 2026 • תנאי שימוש ומדיניות פרטיות</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" id="legalTabTermsBtn" onclick="window.switchLegalTab('terms')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-red-600 text-white">
+                        תנאי שימוש
+                    </button>
+                    <button type="button" id="legalTabPrivacyBtn" onclick="window.switchLegalTab('privacy')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-zinc-800 text-gray-300 hover:text-white">
+                        מדיניות פרטיות
+                    </button>
+                    <button type="button" onclick="window.closeLegalModal()" class="text-gray-400 hover:text-white p-2 rounded-full bg-zinc-800 hover:bg-red-600 transition mr-1">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Scrollable Legal Body -->
+            <div id="legalScrollBody" class="p-6 sm:p-8 overflow-y-auto space-y-5 text-sm text-gray-300 leading-relaxed flex-1">
+                <!-- Terms of Use Content -->
+                <div id="legalContentTerms" class="space-y-5">
+                    <div class="bg-red-600/10 border border-red-500/25 rounded-2xl p-4">
+                        <h4 class="text-base font-black text-white mb-1">תנאי שימוש בפלטפורמת SmartStream (Terms of Use)</h4>
+                        <p class="text-xs text-gray-300">ברוכים הבאים ל-SmartStream. השימוש באתר, צפייה בתכנים, ניהול פרופילי צופים והעלאת מדיה כפופים לתנאים המפורטים להלן.</p>
+                    </div>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">1. קבלת התנאים ומהות השירות</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            SmartStream הינה פלטפורמת סטרימינג מקוונת המאפשרת צפייה בסרטים, סדרות, אנימציות, יצירות מקוריות ותכנים בנחלת הכלל (Public Domain), לצד אפשרות לנגן קבצים מקומיים מהמחשב האישי. הגלישה והשימוש באתר מהווים הסכמה מלאה ובלתי מותנית לתנאים אלה.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">2. חשבונות משתמש, תתי-פרופילים והגבלת גיל</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            המערכת מאפשרת יצירת פרופילי צופה נפרדים והגדרת סינון גיל (<code class="text-emerald-400">6+</code> עד <code class="text-emerald-400">18+</code>) וכן "מצב ילדים" (Kids Mode). בעל החשבון הראשי אחראי לוודא כי כל צופה משתמש בפרופיל התואם את גילו ולשמור על סודיות פרטי הגישה וקודי האימות הדו-שלבי (2FA).
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">3. קניין רוחני, זכויות יוצרים ומיתוג Smart Original</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            כל רכיבי העיצוב, הקוד, ממשק המשתמש וההפקות המסומנות בתגית <span class="text-amber-400 font-bold">Smart Original</span> הינם קניינה הבלעדי של SmartStream ויוצרי הפלטפורמה. תכנים של יוצרים חיצוניים או אולפנים אחרים מוצגים תחת שם ולוגו היוצרים המקוריים ואינם מסומנים כ-Smart Original. חל איסור להעתיק, להפיץ מחדש או לעשות שימוש מסחרי בתכני הפלטפורמה ללא אישור מראש ובכתב מבעלי הזכויות.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">4. העלאת תכנים על ידי יוצרים מורשים</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            יוצרים מורשים המעלים סרטים, סדרות, פוסטרים או לוגואים להפצה ציבורית מצהירים ומתחייבים כי הם מחזיקים במלוא הזכויות או הרישיונות החוקיים לפרסום התוכן, וכי התוכן אינו מפר זכויות יוצרים, סימני מסחר, פרטיות או כל דין אחר.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">5. זמינות השירות והגבלת אחריות</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            השירות מסופק כפי שהוא ("As-Is"). חלק מהשידורים מוזרמים משרתי מדיה חיצוניים (CDN), ולפיכך זמינותם, מהירות טעינתם או איכותם עשויות להשתנות בהתאם לתשתיות הרשת. הנהלת SmartStream רשאית לעדכן, להוסיף או להסיר תכנים ופיצ'רים בכל עת.
+                        </p>
+                    </section>
+                </div>
+
+                <!-- Privacy Policy Content -->
+                <div id="legalContentPrivacy" class="hidden space-y-5">
+                    <div class="bg-emerald-600/10 border border-emerald-500/25 rounded-2xl p-4">
+                        <h4 class="text-base font-black text-white mb-1">מדיניות פרטיות (Privacy Policy)</h4>
+                        <p class="text-xs text-gray-300">פרטיות הצופים והיוצרים חשובה לנו. מסמך זה מפרט איזה מידע נאסף בעת השימוש ב-SmartStream, כיצד הוא נשמר ומהן זכויותיך.</p>
+                    </div>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">1. המידע שאנו אוספים</h5>
+                        <ul class="list-disc pr-5 space-y-1 text-xs sm:text-sm text-gray-300">
+                            <li><strong>פרטי חשבון ואימות:</strong> כתובת דוא"ל ומזהה משתמש ייחודי לצורך התחברות מאובטחת (Firebase Authentication) ואימות דו-שלבי (2FA).</li>
+                            <li><strong>פרופילים והעדפות צפייה:</strong> שמות תתי-הפרופילים, הגדרות הגבלת גיל, רשימת המועדפים ("הרשימה שלי"), נקודות עצירה ("המשך לצפות") ודירוגי חוויית צפייה בסיום סרטים.</li>
+                            <li><strong>קבצים מקומיים (Local Playback):</strong> בעת בחירת קובץ וידאו או קובץ כתוביות (<code class="text-amber-300">.SRT / .VTT</code>) מהמחשב האישי, הקובץ נטען בזיכרון המקומי של הדפדפן לצפייה פרטית בלבד ואינו מועלה לשרתים שלנו.</li>
+                        </ul>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">2. מטרות השימוש במידע</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            המידע משמש אותנו אך ורק לצורך הפעלת הפלטפורמה, סנכרון פרופילי הצפייה והמועדפים בין מכשירים, הצגת המלצות צפייה מותאמות אישית, אכיפת הגבלות גיל בפרופילי ילדים ושמירה על אבטחת החשבון. איננו מוכרים או משכירים מידע אישי לצדדים שלישיים.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">3. אחסון בענן ואבטחת מידע</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            נתוני המשתמש והפרופילים נשמרים בתשתית הענן המאובטחת של Google Firebase (Cloud Firestore & Cloud Storage) ומוגנים באמצעות חוקי הרשאות אבטחה (Security Rules), המבטיחים כי כל משתמש ניגש אך ורק לנתוני החשבון האישי שלו.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">4. פרטיות ילדים (Kids Mode)</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            פרופילי ילדים פועלים תחת חשבון ההורה/המבוגר האחראי ומגבילים את תצוגת הקטלוג לתכנים המותאמים לגיל שהוגדר בלבד, ללא איסוף מידע אישי מזהה נוסף על הילד.
+                        </p>
+                    </section>
+
+                    <section class="space-y-1.5">
+                        <h5 class="text-white font-bold text-base">5. שליטה במידע, עריכה ומחיקה</h5>
+                        <p class="text-xs sm:text-sm text-gray-300">
+                            באפשרותך לערוך או למחוק כל פרופיל צופה בכל עת מתוך תפריט "מי צופה עכשיו?". סל המיחזור כבוי כברירת מחדל כך שמחיקה מתבצעת מיידית, ואם הפעלת אותו ידנית בהגדרות — באפשרותך לרוקן אותו לצמיתות בכל רגע.
+                        </p>
+                    </section>
+                </div>
+            </div>
+
+            <!-- Footer Actions -->
+            <div class="p-4 sm:p-5 border-t border-zinc-800 bg-zinc-950/80 flex flex-wrap items-center justify-between gap-3">
+                <span id="legalAcceptedBadge" class="text-xs text-gray-400 flex items-center gap-1.5">
+                    <i data-lucide="info" class="w-4 h-4 text-gray-400"></i>
+                    <span>המשך השימוש בפלטפורמה מהווה הסכמה לתנאים אלה</span>
+                </span>
+                <div class="flex items-center gap-2.5">
+                    <button type="button" onclick="window.closeLegalModal()" class="bg-zinc-800 hover:bg-zinc-700 text-gray-200 font-bold px-4 py-2 rounded-xl text-xs transition">
+                        סגור
+                    </button>
+                    <button type="button" onclick="window.acceptLegalTerms()" class="bg-red-600 hover:bg-red-700 text-white font-extrabold px-5 py-2 rounded-xl text-xs transition shadow-lg flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>קראתי ואני מאשר/ת</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notifications Container -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- ========================================================= -->
-    <!-- 12. Application Script (Syntax-Verified Single Module)    -->
+    <!-- 13. Application Script (Syntax-Verified Single Module)    -->
     <!-- ========================================================= -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
@@ -1258,6 +1450,71 @@
                 toast.style.opacity = '0';
                 setTimeout(() => toast.remove(), 300);
             }, 3400);
+        };
+
+        // =========================================================
+        // Legal Modal Controller (Terms of Use & Privacy Policy)
+        // =========================================================
+        let legalTermsAccepted = false;
+
+        window.switchLegalTab = (tab = 'terms') => {
+            const isTerms = tab === 'terms';
+            const termsBtn = document.getElementById('legalTabTermsBtn');
+            const privacyBtn = document.getElementById('legalTabPrivacyBtn');
+            const termsBody = document.getElementById('legalContentTerms');
+            const privacyBody = document.getElementById('legalContentPrivacy');
+            const scrollContainer = document.getElementById('legalScrollBody');
+
+            if (termsBtn) {
+                termsBtn.className = isTerms
+                    ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-red-600 text-white shadow-lg'
+                    : 'px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-zinc-800 text-gray-300 hover:text-white';
+            }
+            if (privacyBtn) {
+                privacyBtn.className = !isTerms
+                    ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-emerald-600 text-white shadow-lg'
+                    : 'px-3.5 py-2 rounded-xl text-xs font-extrabold transition bg-zinc-800 text-gray-300 hover:text-white';
+            }
+
+            termsBody?.classList.toggle('hidden', !isTerms);
+            privacyBody?.classList.toggle('hidden', isTerms);
+            if (scrollContainer) scrollContainer.scrollTop = 0;
+        };
+
+        window.openLegalModal = (tab = 'terms') => {
+            window.switchLegalTab(tab);
+            document.getElementById('legalModal')?.classList.remove('hidden');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeLegalModal = () => {
+            document.getElementById('legalModal')?.classList.add('hidden');
+        };
+
+        window.acceptLegalTerms = async () => {
+            legalTermsAccepted = true;
+            const authCheck = document.getElementById('legalConsentCheck');
+            if (authCheck) authCheck.checked = true;
+
+            const badge = document.getElementById('legalAcceptedBadge');
+            if (badge) {
+                badge.innerHTML = '<i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i><span class="text-emerald-400 font-bold">תנאי השימוש ומדיניות הפרטיות אושרו ✓</span>';
+            }
+            const footerStatus = document.getElementById('footerConsentStatus');
+            if (footerStatus) {
+                footerStatus.textContent = 'תנאי השימוש ומדיניות הפרטיות מאושרים ✓ • נובמבר 2026';
+            }
+
+            if (db && auth?.currentUser) {
+                try {
+                    const legalRef = doc(db, "artifacts", appId, "users", auth.currentUser.uid, "smartstream_settings", "legal_consent");
+                    await setDoc(legalRef, { accepted: true, version: '2026-11', acceptedAt: new Date().toISOString() }, { merge: true });
+                } catch (err) {}
+            }
+
+            if (window.lucide) lucide.createIcons();
+            window.closeLegalModal();
+            window.showToast('תנאי השימוש ומדיניות הפרטיות אושרו בהצלחה!');
         };
 
         // =========================================================
@@ -1867,6 +2124,82 @@
                 fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
                 type: 'mp4',
                 description: 'חתולת רחוב נחושה וכלב רגוע בונים יחד טיל מאולתר כדי להמריא לחלל בהרפתקה משעשעת לכל המשפחה.',
+                previewStart: 10,
+                previewEnd: 26,
+                isCreatorOriginal: false
+            },
+            {
+                id: 'caminandes_llamigos',
+                title: 'Caminandes: Llamigos',
+                category: 'family',
+                genre: 'אנימציה וקומדיה',
+                duration: '02:30',
+                ageRating: 6,
+                creatorName: 'Blender Studio',
+                creatorLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/512px-Blender_logo_no_text.svg.png',
+                poster: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=900&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
+                type: 'mp4',
+                description: 'בהרי פטגוניה המושלגים, הלמה קובו יוצאת למרדף משעשע אחרי פירות יער נדירים ונתקלת בפינגווין עקשן.',
+                previewStart: 10,
+                previewEnd: 26,
+                isCreatorOriginal: false
+            },
+            {
+                id: 'hero_blender',
+                title: 'Hero',
+                category: 'scifi',
+                genre: 'פנטזיה ואקשן',
+                duration: '04:01',
+                ageRating: 10,
+                creatorName: 'Blender Studio',
+                creatorLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/512px-Blender_logo_no_text.svg.png',
+                poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=900&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
+                fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4'],
+                type: 'mp4',
+                description: 'סרט אנימציה דו-ממדי ותלת-ממדי מרהיב מבית Blender Studio על אביר צעיר היוצא להוכיח אומץ לב אמיתי.',
+                previewStart: 12,
+                previewEnd: 28,
+                isCreatorOriginal: false
+            },
+            {
+                id: 'coffee_run_blender',
+                title: 'Coffee Run',
+                category: 'scifi',
+                genre: 'דרמה ואנימציה',
+                duration: '03:05',
+                ageRating: 12,
+                creatorName: 'Blender Studio',
+                creatorLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/512px-Blender_logo_no_text.svg.png',
+                poster: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
+                fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'],
+                type: 'mp4',
+                description: 'מרוץ מסחרר ברחובות העיר שמונע על ידי קפאין, זיכרונות והחלטות גורליות מבית Blender Studio.',
+                previewStart: 10,
+                previewEnd: 26,
+                isCreatorOriginal: false
+            },
+            {
+                id: 'glass_half_blender',
+                title: 'Glass Half',
+                category: 'family',
+                genre: 'קומדיה ואנימציה',
+                duration: '03:03',
+                ageRating: 6,
+                creatorName: 'Blender Studio',
+                creatorLogo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Blender_logo_no_text.svg/512px-Blender_logo_no_text.svg.png',
+                poster: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&w=900&q=80',
+                videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
+                fallbackUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+                fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'],
+                type: 'mp4',
+                description: 'שני מבקרי אמנות בעלי השקפות עולם הפוכות מתעמתים בגלריה מודרנית בקומדיה קצבית מבית Blender Studio.',
                 previewStart: 10,
                 previewEnd: 26,
                 isCreatorOriginal: false
@@ -3485,6 +3818,12 @@
             e.preventDefault();
             if (!window.isAdminCreator()) return;
 
+            const legalAck = document.getElementById('creatorLegalAckCheck');
+            if (legalAck && !legalAck.checked) {
+                window.showToast('יש לאשר עמידה בתנאי השימוש וזכויות היוצרים', 'error');
+                return;
+            }
+
             const submitBtn = document.getElementById('creatorUploadSubmitBtn');
             const progressBox = document.getElementById('cloudUploadProgressBox');
             const progressBar = document.getElementById('cloudUploadProgressBar');
@@ -3724,6 +4063,11 @@
             e.preventDefault();
             const email = document.getElementById('authEmail').value.trim();
             const password = document.getElementById('authPassword').value;
+            const consentCheck = document.getElementById('legalConsentCheck');
+            if (consentCheck && !consentCheck.checked) {
+                window.showToast('אנא אשר/י את תנאי השימוש ומדיניות הפרטיות כדי להמשיך', 'error');
+                return;
+            }
             if (!email || !password) return;
 
             pendingAuthEmail = email;
@@ -3842,6 +4186,16 @@
                     deletedProfilesBin = Array.isArray(data.deletedProfilesBin) ? data.deletedProfilesBin : [];
                     updateRecycleBinBadgesUI();
                 }
+
+                const legalRef = doc(db, "artifacts", appId, "users", uid, "smartstream_settings", "legal_consent");
+                const legalSnap = await getDoc(legalRef);
+                if (legalSnap.exists() && legalSnap.data()?.accepted) {
+                    legalTermsAccepted = true;
+                    const footerStatus = document.getElementById('footerConsentStatus');
+                    if (footerStatus) {
+                        footerStatus.textContent = 'תנאי השימוש ומדיניות הפרטיות מאושרים ✓ • נובמבר 2026';
+                    }
+                }
             } catch (err) {}
         }
 
@@ -3924,4 +4278,4 @@
         }
     </script>
 </body>
-</html>
+                    </html>
