@@ -1076,7 +1076,24 @@
                 <span>אולפן העלאה והפצה ציבורית לענן (100% Firestore Cloud)</span>
             </div>
             <h3 class="text-xl font-black text-white mb-1">העלאת סרט או סדרה לפלטפורמה</h3>
-            <p class="text-xs text-gray-400 mb-4">כל תוכן שתעלה יפורסם ציבורית בקטלוג של כל הצופים, עם הפרדה ברורה בין יצירות שלך ליוצרים/אולפנים חיצוניים</p>
+            <p class="text-xs text-gray-400 mb-3">כל תוכן שתעלה יפורסם ציבורית בקטלוג של כל הצופים, עם הפרדה ברורה בין יצירות שלך ליוצרים/אולפנים חיצוניים</p>
+
+            <!-- Live Firebase Keys & Admin Auth Status Bar -->
+            <div id="uploadCloudAuthStatusPanel" class="mb-4 bg-zinc-950/90 border border-emerald-500/35 rounded-2xl p-3 space-y-2">
+                <div class="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                    <span class="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                        <span>מפתחות Firebase מוטמעים בקוד (shoval2-ec154) ✓</span>
+                    </span>
+                    <span id="uploadFirebaseAuthBadge" class="font-bold text-amber-300">בודק חיבור חשבון לענן...</span>
+                </div>
+                <div id="uploadQuickAdminReauthRow" class="hidden flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1 border-t border-white/10">
+                    <input type="password" id="inlineAdminCloudPwd" placeholder="הזן סיסמת מנהל לאימות מול Firebase..." class="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400" dir="ltr">
+                    <button type="button" onclick="window.verifyInlineAdminCloudAuth()" class="bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs px-3.5 py-1.5 rounded-xl transition flex-shrink-0">
+                        אמת חיבור לענן
+                    </button>
+                </div>
+            </div>
 
             <form onsubmit="window.handleCreatorUploadSubmit(event)" class="space-y-4">
                 <!-- Content Type: Movie vs Series -->
@@ -1660,53 +1677,89 @@ service cloud.firestore {
         async function ensureAdminFirebaseAuth() {
             if (!auth) return null;
             if (auth.currentUser && auth.currentUser.email && auth.currentUser.email.toLowerCase() === ADMIN_CREATOR_EMAIL) {
+                updateUploadCloudAuthStatusUI();
                 return auth.currentUser;
             }
-            const savedPass = sessionStorage.getItem('smartstream_admin_session_pwd');
+            const inlineInput = document.getElementById('inlineAdminCloudPwd');
+            const inlinePwd = inlineInput ? inlineInput.value.trim() : '';
+            const savedPass = inlinePwd || sessionStorage.getItem('smartstream_admin_session_pwd');
             if (savedPass) {
+                sessionStorage.setItem('smartstream_admin_session_pwd', savedPass);
                 try {
                     const cred = await signInWithEmailAndPassword(auth, ADMIN_CREATOR_EMAIL, savedPass);
+                    updateUploadCloudAuthStatusUI();
                     return cred.user;
                 } catch (err) {
+                    if (err?.code === 'auth/operation-not-allowed') {
+                        return { errorCode: 'auth/operation-not-allowed' };
+                    }
                     if (err?.code === 'auth/user-not-found' || err?.code === 'auth/invalid-credential') {
                         try {
                             const created = await createUserWithEmailAndPassword(auth, ADMIN_CREATOR_EMAIL, savedPass);
+                            updateUploadCloudAuthStatusUI();
                             return created.user;
-                        } catch (e2) {}
+                        } catch (e2) {
+                            if (e2?.code === 'auth/operation-not-allowed') {
+                                return { errorCode: 'auth/operation-not-allowed' };
+                            }
+                        }
                     }
                 }
             }
+            updateUploadCloudAuthStatusUI();
             return auth.currentUser || null;
         }
 
+        function updateUploadCloudAuthStatusUI() {
+            const badge = document.getElementById('uploadFirebaseAuthBadge');
+            const reauthRow = document.getElementById('uploadQuickAdminReauthRow');
+            const isFbAdminAuthed = Boolean(
+                auth &&
+                auth.currentUser &&
+                auth.currentUser.email &&
+                auth.currentUser.email.toLowerCase() === ADMIN_CREATOR_EMAIL
+            );
+            if (badge) {
+                if (isFbAdminAuthed) {
+                    badge.className = 'font-bold text-emerald-400';
+                    badge.textContent = 'חשבון מנהל מאומת בענן ✓';
+                } else {
+                    badge.className = 'font-bold text-amber-300';
+                    badge.textContent = 'נדרש אימות סיסמה חד-פעמי לענן';
+                }
+            }
+            if (reauthRow) {
+                if (isFbAdminAuthed) reauthRow.classList.add('hidden');
+                else reauthRow.classList.remove('hidden');
+            }
+        }
+
+        window.verifyInlineAdminCloudAuth = async () => {
+            const pwdInput = document.getElementById('inlineAdminCloudPwd');
+            const pwd = pwdInput ? pwdInput.value.trim() : '';
+            if (!pwd || pwd.length < 6) {
+                window.showToast('הזן סיסמה בת 6 תווים לפחות', 'error');
+                return;
+            }
+            sessionStorage.setItem('smartstream_admin_session_pwd', pwd);
+            const res = await ensureAdminFirebaseAuth();
+            if (res && res.errorCode === 'auth/operation-not-allowed') {
+                window.showToast('יש להפעיל Email/Password ב-Firebase Console תחת Authentication -> Sign-in method', 'error');
+                return;
+            }
+            if (res && res.email && res.email.toLowerCase() === ADMIN_CREATOR_EMAIL) {
+                window.showToast('חשבון המנהל אומת מול Firebase בהצלחה! כעת ניתן לפרסם.');
+            } else {
+                window.showToast('הסיסמה אינה תואמת לחשבון ב-Firebase Auth — בדוק את הסיסמה או אפס אותה בקונסול', 'error');
+            }
+        };
+
         // =========================================================
-        // 2. Role Permissions, Profiles & Recycle Bin State
+        // 2. Role Permissions & Viewer Profiles State
         // =========================================================
-        const AVATAR_PRESETS = [
-            { id: 'av1', bg: 'from-red-600 to-rose-800', emoji: '🎬' },
-            { id: 'av2', bg: 'from-sky-500 to-indigo-700', emoji: '🚀' },
-            { id: 'av3', bg: 'from-emerald-500 to-teal-800', emoji: '🍿' },
-            { id: 'av4', bg: 'from-amber-400 to-orange-600', emoji: '🦁' },
-            { id: 'av5', bg: 'from-purple-500 to-fuchsia-800', emoji: '👾' },
-            { id: 'av6', bg: 'from-pink-500 to-rose-600', emoji: '🦄' },
-            { id: 'av7', bg: 'from-cyan-500 to-blue-700', emoji: '🤖' },
-            { id: 'av8', bg: 'from-lime-500 to-green-700', emoji: '🦖' }
-        ];
-
-        const AGE_RANK_MAP = { all: 0, '7': 7, '13': 13, '16': 16, '18': 18 };
-
-        let allProfilesList = JSON.parse(localStorage.getItem('smartstream_profiles_list') || 'null') || [
-            { id: 'prof_main', name: 'צופה ראשי', avatarId: 'av1', isKids: false, ageRating: '18' },
-            { id: 'prof_kids', name: 'ילדים', avatarId: 'av4', isKids: true, ageRating: '7' }
-        ];
-        let deletedProfilesBin = JSON.parse(localStorage.getItem('smartstream_deleted_profiles_bin') || '[]');
-        let recycleBinEnabled = localStorage.getItem('smartstream_recycle_bin_enabled') === 'true'; // OFF by default
-        let pendingDeleteProfileId = null;
-
-        window.activeSubProfile = allProfilesList.find(p => p.id === localStorage.getItem('smartstream_active_profile_id')) || allProfilesList[0];
-
         window.isAdminCreator = () => {
-            return Boolean(currentUser && currentUser.email && currentUser.email.toLowerCase() === ADMIN_CREATOR_EMAIL);
+            const email = (currentUser?.email || auth?.currentUser?.email || '').trim().toLowerCase();
+            return email === ADMIN_CREATOR_EMAIL;
         };
 
         window.syncRolePermissionsUI = () => {
@@ -1717,20 +1770,69 @@ service cloud.firestore {
 
             if (isAdmin) {
                 badge?.classList.remove('hidden');
-                badge?.classList.add('flex');
+                badge?.classList.add('inline-flex');
                 uploadBtn?.classList.remove('hidden');
-                uploadBtn?.classList.add('flex');
+                uploadBtn?.classList.add('inline-flex');
                 adminBtn?.classList.remove('hidden');
-                adminBtn?.classList.add('flex');
+                adminBtn?.classList.add('inline-flex');
             } else {
                 badge?.classList.add('hidden');
-                badge?.classList.remove('flex');
+                badge?.classList.remove('inline-flex');
                 uploadBtn?.classList.add('hidden');
-                uploadBtn?.classList.remove('flex');
+                uploadBtn?.classList.remove('inline-flex');
                 adminBtn?.classList.add('hidden');
-                adminBtn?.classList.remove('flex');
+                adminBtn?.classList.remove('inline-flex');
             }
         };
+
+        const AVATAR_PRESETS = [
+            { id: 'av1', emoji: '🎬', bg: 'from-red-500 to-rose-700' },
+            { id: 'av2', emoji: '🍿', bg: 'from-amber-400 to-orange-600' },
+            { id: 'av3', emoji: '🚀', bg: 'from-sky-400 to-blue-700' },
+            { id: 'av4', emoji: '🦁', bg: 'from-emerald-400 to-teal-700' },
+            { id: 'av5', emoji: '👾', bg: 'from-purple-500 to-indigo-700' },
+            { id: 'av6', emoji: '🦄', bg: 'from-pink-400 to-fuchsia-600' },
+            { id: 'av7', emoji: '🤖', bg: 'from-slate-500 to-zinc-800' },
+            { id: 'av8', emoji: '👑', bg: 'from-yellow-400 to-amber-600' }
+        ];
+
+        const AGE_RANK_MAP = {
+            all: 0,
+            '7': 7,
+            '13': 13,
+            '16': 16,
+            '18': 18
+        };
+
+        const DEFAULT_PROFILES = [
+            { id: 'prof_main', name: 'ראשי', avatarId: 'av1', isKids: false, ageRating: '18' },
+            { id: 'prof_kids', name: 'ילדים', avatarId: 'av4', isKids: true, ageRating: '7' }
+        ];
+
+        let allProfilesList = (() => {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('smartstream_profiles_list') || 'null');
+                return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_PROFILES;
+            } catch (e) {
+                return DEFAULT_PROFILES;
+            }
+        })();
+
+        let deletedProfilesBin = (() => {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('smartstream_deleted_profiles_bin') || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (e) {
+                return [];
+            }
+        })();
+
+        let recycleBinEnabled = localStorage.getItem('smartstream_recycle_bin_enabled') === 'true';
+        let pendingDeleteProfileId = null;
+        window.activeSubProfile = (() => {
+            const savedId = localStorage.getItem('smartstream_active_profile_id');
+            return allProfilesList.find(p => p.id === savedId) || allProfilesList[0];
+        })();
 
         function getAvatarPreset(avatarId) {
             return AVATAR_PRESETS.find(a => a.id === avatarId) || AVATAR_PRESETS[0];
@@ -2150,8 +2252,12 @@ service cloud.firestore {
                     window.showToast(`ברוך הבא, ${email}!`);
                     return;
                 } catch (err) {
+                    if (err?.code === 'auth/operation-not-allowed') {
+                        showAuthInlineError('יש להפעיל התחברות באמצעות Email/Password בקונסול של Firebase (Authentication -> Sign-in method).');
+                        return;
+                    }
                     if (err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') {
-                        showAuthInlineError('האימייל או הסיסמה שגויים. נסה שוב או הירשם.');
+                        showAuthInlineError('האימייל או הסיסמה שגויים. אם טרם נרשמת ב-Firebase, לחץ למטה על "הירשם עכשיו".');
                         return;
                     }
                 }
@@ -2209,6 +2315,10 @@ service cloud.firestore {
                     window.showToast(`החשבון נוצר בהצלחה! ברוך הבא, ${email}`);
                     return;
                 } catch (err) {
+                    if (err?.code === 'auth/operation-not-allowed') {
+                        showAuthInlineError('יש להפעיל את ספק Email/Password ב-Firebase Console תחת Authentication -> Sign-in method.');
+                        return;
+                    }
                     if (err?.code === 'auth/email-already-in-use') {
                         try {
                             const cred = await signInWithEmailAndPassword(auth, email, password);
@@ -2219,7 +2329,7 @@ service cloud.firestore {
                             window.showToast(`התחברת לחשבון הקיים (${email})`);
                             return;
                         } catch (e2) {
-                            showAuthInlineError('כתובת האימייל כבר רשומה עם סיסמה אחרת.');
+                            showAuthInlineError('כתובת האימייל כבר רשומה ב-Firebase עם סיסמה אחרת.');
                             window.backToCredentialsStep();
                             return;
                         }
@@ -3506,11 +3616,17 @@ service cloud.firestore {
                 return { ok: false, reason: 'חיבור Firestore אינו זמין כרגע.' };
             }
             const authedAdmin = await ensureAdminFirebaseAuth();
-            if (!authedAdmin || !authedAdmin.email || authedAdmin.email.toLowerCase() !== ADMIN_CREATOR_EMAIL) {
-                syncFirebaseSetupBoxVisibility(true);
+            if (authedAdmin && authedAdmin.errorCode === 'auth/operation-not-allowed') {
                 return {
                     ok: false,
-                    reason: 'הסשן מול Firebase Auth פג תוקף — התנתק והתחבר מחדש עם shovalkaufman@gmail.com כדי לחדש את אסימון ההרשאה.'
+                    reason: 'יש להפעיל את ספק Email/Password ב-Firebase Console תחת Authentication -> Sign-in method.'
+                };
+            }
+            if (!authedAdmin || !authedAdmin.email || authedAdmin.email.toLowerCase() !== ADMIN_CREATOR_EMAIL) {
+                updateUploadCloudAuthStatusUI();
+                return {
+                    ok: false,
+                    reason: 'הזן את סיסמת המנהל בתיבת "אמת חיבור לענן" שבראש הטופס ולחץ על הכפתור לפני הפרסום.'
                 };
             }
 
@@ -3766,6 +3882,7 @@ service cloud.firestore {
             window.toggleUploadMediaType('movie');
             window.toggleOwnershipFields('external');
             syncFirebaseSetupBoxVisibility(false);
+            updateUploadCloudAuthStatusUI();
             document.getElementById('videoChunkPlanBadge')?.classList.add('hidden');
             document.getElementById('creatorUrlTestStatus')?.classList.add('hidden');
             document.getElementById('cloudUploadProgressBox')?.classList.add('hidden');
@@ -3865,6 +3982,29 @@ service cloud.firestore {
             }
 
             if (submitBtn) submitBtn.disabled = true;
+
+            // Read & compress small image assets immediately before multi-second video chunking
+            const studioLogoFile = document.getElementById('creatorStudioLogoFile')?.files?.[0] || null;
+            let finalCreatorLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorStudioLogoUrl')?.value).url;
+            if (studioLogoFile) {
+                const res = await uploadFileToPublicCloud(studioLogoFile, 'logos', null);
+                if (res.ok && res.url) finalCreatorLogo = res.url;
+            }
+
+            const titleLogoFile = document.getElementById('creatorTitleLogoFile')?.files?.[0] || null;
+            let finalTitleLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorTitleLogoUrl')?.value).url;
+            if (titleLogoFile) {
+                const res = await uploadFileToPublicCloud(titleLogoFile, 'logos', null);
+                if (res.ok && res.url) finalTitleLogo = res.url;
+            }
+
+            const posterFile = document.getElementById('creatorMoviePosterFile')?.files?.[0] || null;
+            let finalPosterUrl = window.normalizeHttpsMediaUrl(document.getElementById('creatorMoviePoster')?.value).url;
+            if (posterFile) {
+                const res = await uploadFileToPublicCloud(posterFile, 'posters', null);
+                if (res.ok && res.url) finalPosterUrl = res.url;
+            }
+
             if (videoFile && progressBox) {
                 const initPlan = calculateAdaptiveChunkPlan(videoFile.size);
                 progressBox.classList.remove('hidden');
@@ -3904,28 +4044,18 @@ service cloud.firestore {
                 isDashXmlStream = normalizedVid.isDashXml;
             }
 
-            const studioLogoFile = document.getElementById('creatorStudioLogoFile')?.files?.[0] || null;
-            let finalCreatorLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorStudioLogoUrl')?.value).url;
-            if (studioLogoFile) {
-                const res = await uploadFileToPublicCloud(studioLogoFile, 'logos', null);
-                if (res.ok && res.url) finalCreatorLogo = res.url;
+            const cloudAuthCheck = await ensureAdminFirebaseAuth();
+            if (!cloudAuthCheck || cloudAuthCheck.errorCode || !cloudAuthCheck.email) {
+                if (submitBtn) submitBtn.disabled = false;
+                if (progressBox) progressBox.classList.add('hidden');
+                window.showToast(
+                    cloudAuthCheck?.errorCode === 'auth/operation-not-allowed'
+                        ? 'יש להפעיל Email/Password ב-Firebase Console תחת Authentication -> Sign-in method'
+                        : 'הזן סיסמת מנהל בתיבת "אמת חיבור לענן" שבראש הטופס לפני הפרסום',
+                    'error'
+                );
+                return;
             }
-
-            const titleLogoFile = document.getElementById('creatorTitleLogoFile')?.files?.[0] || null;
-            let finalTitleLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorTitleLogoUrl')?.value).url;
-            if (titleLogoFile) {
-                const res = await uploadFileToPublicCloud(titleLogoFile, 'logos', null);
-                if (res.ok && res.url) finalTitleLogo = res.url;
-            }
-
-            const posterFile = document.getElementById('creatorMoviePosterFile')?.files?.[0] || null;
-            let finalPosterUrl = window.normalizeHttpsMediaUrl(document.getElementById('creatorMoviePoster')?.value).url;
-            if (posterFile) {
-                const res = await uploadFileToPublicCloud(posterFile, 'posters', null);
-                if (res.ok && res.url) finalPosterUrl = res.url;
-            }
-
-            await ensureAdminFirebaseAuth();
             const targetSeriesId = document.getElementById('existingSeriesSelect')?.value || '__new__';
 
             if (isSeries && targetSeriesId !== '__new__') {
