@@ -3192,7 +3192,18 @@ service cloud.firestore {
             else el.classList.remove('active');
         }
 
+        let activeFirestoreStreamAbort = null;
+        let activeFirestoreMseUrl = null;
+
         function destroyDashPlayer() {
+            if (activeFirestoreStreamAbort) {
+                try { activeFirestoreStreamAbort.abort(); } catch (e) {}
+                activeFirestoreStreamAbort = null;
+            }
+            if (activeFirestoreMseUrl) {
+                try { URL.revokeObjectURL(activeFirestoreMseUrl); } catch (e) {}
+                activeFirestoreMseUrl = null;
+            }
             if (dashPlayerInstance) {
                 try { dashPlayerInstance.reset(); } catch (e) {}
                 dashPlayerInstance = null;
@@ -3201,100 +3212,101 @@ service cloud.firestore {
 
         function seekVideoTo(targetSeconds) {
             const video = document.getElementById('mainVideo');
-            if (!video || !isFinite(targetSeconds)) return;
-            const clamped = Math.max(0, Math.min(video.duration || targetSeconds, targetSeconds));
-            if (dashPlayerInstance) {
-                try { dashPlayerInstance.seek(clamped); } catch (e) {}
-            }
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeEl = document.getElementById('currentTime');
+            if (!video || !isFinite(video.duration) || video.duration <= 0) return;
+
+            const clamped = Math.max(0, Math.min(video.duration, Number(targetSeconds) || 0));
             video.currentTime = clamped;
+            if (progressBar) {
+                progressBar.value = String((clamped / video.duration) * 100);
+            }
+            if (currentTimeEl) {
+                currentTimeEl.textContent = formatTimecode(clamped);
+            }
+            updateSubtitleOverlay(clamped);
         }
 
-        window.playMovie = async (movieId, seasonNum = 1, episodeNum = 1) => {
-            const item = getFullMoviesList().find(m => m.id === movieId);
-            if (!item) return;
+        let pendingResumeSeconds = 0;
 
-            activePlayingItem = item;
-            activePlayingSeason = seasonNum;
-            activePlayingEpisode = episodeNum;
-            activeServerIndex = 0;
-            creditsTriggeredForCurrentPlay = false;
-
-            const playerEl = document.getElementById('customPlayer');
-            const video = document.getElementById('mainVideo');
-            const titleEl = document.getElementById('playerTitle');
-            const nextEpBtn = document.getElementById('nextEpisodePlayerBtn');
-
-            playerEl.classList.remove('credits-pip-mode');
-            document.getElementById('creditsRatingOverlay')?.classList.add('hidden');
-            playerEl.style.display = 'flex';
-            setBufferingOverlay(true, 'מכין זרם שידור...');
-
-            let targetAsset = item;
-            if (item.isSeries && Array.isArray(item.seasons)) {
-                const sObj = item.seasons.find(s => s.seasonNumber === seasonNum) || item.seasons[0];
-                const epObj = sObj?.episodes?.find(e => e.episode === episodeNum) || sObj?.episodes?.[0];
+        function getActiveEpisodeAsset(item, seasonNum = 1, episodeNum = 1) {
+            if (!item) return null;
+            if (item.isSeries && Array.isArray(item.seasons) && item.seasons.length > 0) {
+                const seasonObj = item.seasons.find(s => Number(s.seasonNumber) === Number(seasonNum)) || item.seasons[0];
+                const epObj = (seasonObj?.episodes || []).find(ep => Number(ep.episode) === Number(episodeNum)) || (seasonObj?.episodes || [])[0];
                 if (epObj) {
-                    targetAsset = epObj;
-                    if (titleEl) titleEl.textContent = `${item.title} • עונה ${sObj.seasonNumber} פרק ${epObj.episode}`;
-                    const hasNext = Boolean(sObj?.episodes?.find(e => e.episode === epObj.episode + 1));
-                    if (nextEpBtn) {
-                        if (hasNext) {
-                            nextEpBtn.classList.remove('hidden');
-                            nextEpBtn.classList.add('flex');
-                        } else {
-                            nextEpBtn.classList.add('hidden');
-                            nextEpBtn.classList.remove('flex');
-                        }
-                    }
+                    return {
+                        title: `${item.title} • עונה ${seasonObj.seasonNumber} פרק ${epObj.episode}: ${epObj.title}`,
+                        progressKey: `${item.id}_s${seasonObj.seasonNumber}_e${epObj.episode}`,
+                        seasonNumber: seasonObj.seasonNumber,
+                        episodeNumber: epObj.episode,
+                        dashUrl: epObj.dashUrl || '',
+                        videoUrl: epObj.videoUrl || item.videoUrl || '',
+                        fallbackUrls: epObj.fallbackUrls || item.fallbackUrls || [],
+                        firestoreVideoAsset: epObj.firestoreVideoAsset || null
+                    };
                 }
-            } else {
-                if (titleEl) titleEl.textContent = item.title;
-                nextEpBtn?.classList.add('hidden');
             }
+            return {
+                title: item.title,
+                progressKey: item.id,
+                seasonNumber: 1,
+                episodeNumber: 1,
+                dashUrl: item.dashUrl || '',
+                videoUrl: item.videoUrl || '',
+                fallbackUrls: item.fallbackUrls || [],
+                firestoreVideoAsset: item.firestoreVideoAsset || null
+            };
+        }
 
-            // If stored as Firestore Adaptive Micro-Chunks, assemble stream first
-            if (targetAsset.firestoreVideoAsset) {
-                setBufferingOverlay(true, 'מזרים מקטעי וידאו מ-Firestore (0%)...');
-                const assembledBlobUrl = await resolveFirestoreVideoBlobUrl(targetAsset.firestoreVideoAsset, (loaded, total) => {
-                    const pct = Math.round((loaded / total) * 100);
-                    setBufferingOverlay(true, `מזרים מקטעי וידאו מ-Firestore (${pct}%)...`);
-                });
-                if (assembledBlobUrl) {
-                    currentStreamUrls = [assembledBlobUrl, ...(targetAsset.fallbackUrls || [])];
-                } else {
-                    window.showToast('שגיאה בטעינת מקטעי הווידאו — עובר לשרת גיבוי', 'error');
-                    currentStreamUrls = targetAsset.fallbackUrls || ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'];
-                }
-            } else {
-                const urls = [];
-                if (targetAsset.dashUrl) urls.push(targetAsset.dashUrl);
-                if (targetAsset.videoUrl && !targetAsset.videoUrl.startsWith('firestore://')) urls.push(targetAsset.videoUrl);
-                if (Array.isArray(targetAsset.fallbackUrls)) {
-                    targetAsset.fallbackUrls.forEach(u => {
-                        if (u && !u.startsWith('firestore://') && !urls.includes(u)) urls.push(u);
-                    });
-                }
-                if (urls.length === 0) {
-                    urls.push('https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4');
-                }
-                currentStreamUrls = urls;
+        function hasNextSeriesEpisode(item, seasonNum, episodeNum) {
+            if (!item || !item.isSeries || !Array.isArray(item.seasons)) return false;
+            const sIdx = item.seasons.findIndex(s => Number(s.seasonNumber) === Number(seasonNum));
+            if (sIdx === -1) return false;
+            const episodes = item.seasons[sIdx].episodes || [];
+            const eIdx = episodes.findIndex(ep => Number(ep.episode) === Number(episodeNum));
+            if (eIdx !== -1 && eIdx + 1 < episodes.length) return true;
+            if (sIdx + 1 < item.seasons.length && (item.seasons[sIdx + 1].episodes || []).length > 0) return true;
+            return false;
+        }
+
+        window.playNextSeriesEpisode = () => {
+            if (!activePlayingItem || !activePlayingItem.isSeries) return;
+            const sIdx = activePlayingItem.seasons.findIndex(s => Number(s.seasonNumber) === Number(activePlayingSeason));
+            if (sIdx === -1) return;
+            const episodes = activePlayingItem.seasons[sIdx].episodes || [];
+            const eIdx = episodes.findIndex(ep => Number(ep.episode) === Number(activePlayingEpisode));
+            if (eIdx !== -1 && eIdx + 1 < episodes.length) {
+                window.playMovie(activePlayingItem.id, activePlayingSeason, episodes[eIdx + 1].episode);
+                return;
             }
-
-            startStreamAtIndex(0);
-            if (window.lucide) window.lucide.createIcons();
+            if (sIdx + 1 < activePlayingItem.seasons.length) {
+                const nextSeason = activePlayingItem.seasons[sIdx + 1];
+                const firstEp = (nextSeason.episodes || [])[0];
+                if (firstEp) {
+                    window.playMovie(activePlayingItem.id, nextSeason.seasonNumber, firstEp.episode);
+                }
+            }
         };
 
         function startStreamAtIndex(idx) {
             const video = document.getElementById('mainVideo');
             if (!video || currentStreamUrls.length === 0) return;
-            activeServerIndex = idx % currentStreamUrls.length;
-            const streamUrl = currentStreamUrls[activeServerIndex];
+            const safeIdx = Math.max(0, Math.min(currentStreamUrls.length - 1, idx));
+            activeServerIndex = safeIdx;
+            const streamUrl = currentStreamUrls[safeIdx];
 
-            const srvLabel = document.getElementById('activeServerLabel');
-            if (srvLabel) srvLabel.textContent = `שרת ${activeServerIndex + 1}`;
+            const serverLabel = document.getElementById('activeServerLabel');
+            if (serverLabel) {
+                serverLabel.textContent = `שרת ${safeIdx + 1} מתוך ${currentStreamUrls.length}`;
+            }
 
-            destroyDashPlayer();
-            setBufferingOverlay(true, 'מתחבר לשרת הזרמה...');
+            if (dashPlayerInstance) {
+                try { dashPlayerInstance.reset(); } catch (e) {}
+                dashPlayerInstance = null;
+            }
+
+            setBufferingOverlay(true, 'מתחבר לשרת ההזרמה...');
 
             if (/\.mpd(\?|$)/i.test(streamUrl) && window.dashjs) {
                 dashPlayerInstance = window.dashjs.MediaPlayer().create();
@@ -3302,8 +3314,14 @@ service cloud.firestore {
                 dashPlayerInstance.on(window.dashjs.MediaPlayer.events.ERROR, () => {
                     if (activeServerIndex + 1 < currentStreamUrls.length) {
                         startStreamAtIndex(activeServerIndex + 1);
+                    } else {
+                        setBufferingOverlay(false);
+                        window.showToast('שגיאה בטעינת הזרם — נסה קובץ מקומי או שרת אחר', 'error');
                     }
                 });
+            } else if (activeFirestoreMseUrl && streamUrl === activeFirestoreMseUrl) {
+                setBufferingOverlay(false);
+                video.play().catch(() => {});
             } else {
                 video.src = streamUrl;
                 video.load();
@@ -3316,64 +3334,197 @@ service cloud.firestore {
                 window.showToast('אין שרתי גיבוי נוספים לתוכן זה');
                 return;
             }
-            startStreamAtIndex(activeServerIndex + 1);
-            window.showToast(`הוחלף לשרת הזרמה ${activeServerIndex + 1}`);
+            const nextIdx = (activeServerIndex + 1) % currentStreamUrls.length;
+            startStreamAtIndex(nextIdx);
+            window.showToast(`הוחלף לשרת הזרמה ${nextIdx + 1}`);
         };
 
         window.loadLocalVideoFile = (e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            const blobUrl = URL.createObjectURL(file);
-            currentStreamUrls = [blobUrl];
-            const titleEl = document.getElementById('playerTitle');
-            if (titleEl) titleEl.textContent = file.name;
+            destroyDashPlayer();
+            const localUrl = URL.createObjectURL(file);
+            currentStreamUrls = [localUrl];
+            document.getElementById('playerTitle').textContent = file.name;
             startStreamAtIndex(0);
             window.showToast(`מנגן קובץ מקומי: ${file.name}`);
         };
 
-        window.playNextSeriesEpisode = () => {
-            if (!activePlayingItem || !activePlayingItem.isSeries) return;
-            window.playMovie(activePlayingItem.id, activePlayingSeason, activePlayingEpisode + 1);
+        window.playMovie = async (movieId, seasonNum = 1, episodeNum = 1) => {
+            const item = getFullMoviesList().find(m => m.id === movieId);
+            if (!item) return;
+
+            if (!isItemAllowedForActiveProfile(item)) {
+                window.showToast('תוכן זה חסום עבור הגבלת הגיל של הפרופיל הפעיל', 'error');
+                return;
+            }
+
+            const targetAsset = getActiveEpisodeAsset(item, seasonNum, episodeNum);
+            if (!targetAsset) return;
+
+            activePlayingItem = item;
+            activePlayingSeason = targetAsset.seasonNumber;
+            activePlayingEpisode = targetAsset.episodeNumber;
+            creditsTriggeredForCurrentPlay = false;
+
+            const player = document.getElementById('customPlayer');
+            const video = document.getElementById('mainVideo');
+            const nextEpBtn = document.getElementById('nextEpisodePlayerBtn');
+
+            player?.classList.remove('credits-pip-mode');
+            document.getElementById('creditsRatingOverlay')?.classList.add('hidden');
+            if (player) player.style.display = 'flex';
+            document.getElementById('playerTitle').textContent = targetAsset.title;
+
+            if (nextEpBtn) {
+                if (hasNextSeriesEpisode(item, activePlayingSeason, activePlayingEpisode)) {
+                    nextEpBtn.classList.remove('hidden');
+                    nextEpBtn.classList.add('inline-flex');
+                } else {
+                    nextEpBtn.classList.add('hidden');
+                    nextEpBtn.classList.remove('inline-flex');
+                }
+            }
+
+            // Check saved resume progress
+            const progressMap = getContinueWatchingMap();
+            const savedProg = progressMap[item.id];
+            pendingResumeSeconds = (savedProg && savedProg.currentTime > 5 && savedProg.duration > 30 && savedProg.currentTime < savedProg.duration - 20)
+                ? savedProg.currentTime
+                : 0;
+
+            destroyDashPlayer();
+
+            if (targetAsset.firestoreVideoAsset) {
+                const abortCtrl = new AbortController();
+                activeFirestoreStreamAbort = abortCtrl;
+                setBufferingOverlay(true, 'מתחבר לזרם המהיר (0%)...');
+
+                const streamResult = await resolveFirestoreVideoStream(
+                    targetAsset.firestoreVideoAsset,
+                    video,
+                    abortCtrl.signal,
+                    (loaded, total, speedMbps, isInstantMse) => {
+                        if (isInstantMse) {
+                            setBufferingOverlay(false);
+                            return;
+                        }
+                        const pct = Math.round((loaded / total) * 100);
+                        const speedLabel = speedMbps > 0 ? ` • ${speedMbps.toFixed(1)} MB/s` : '';
+                        setBufferingOverlay(true, `טוען זרם מהיר (${pct}%${speedLabel})...`);
+                    }
+                );
+
+                if (abortCtrl.signal.aborted) return;
+
+                if (streamResult && streamResult.url) {
+                    if (streamResult.isMse) {
+                        activeFirestoreMseUrl = streamResult.url;
+                    }
+                    currentStreamUrls = [streamResult.url, ...(targetAsset.fallbackUrls || [])];
+                } else {
+                    window.showToast('שגיאה בטעינת מקטעי הווידאו — עובר לשרת גיבוי', 'error');
+                    currentStreamUrls = targetAsset.fallbackUrls?.length
+                        ? targetAsset.fallbackUrls
+                        : ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'];
+                }
+            } else {
+                const urls = [];
+                if (targetAsset.dashUrl) urls.push(targetAsset.dashUrl);
+                if (targetAsset.videoUrl && !urls.includes(targetAsset.videoUrl)) urls.push(targetAsset.videoUrl);
+                (targetAsset.fallbackUrls || []).forEach(u => {
+                    if (u && !urls.includes(u)) urls.push(u);
+                });
+                currentStreamUrls = urls.length > 0 ? urls : ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'];
+            }
+
+            startStreamAtIndex(0);
+            resetHudAutoHideTimer();
+            if (window.lucide) window.lucide.createIcons();
         };
+
+        window.closePlayer = () => {
+            const player = document.getElementById('customPlayer');
+            const video = document.getElementById('mainVideo');
+            destroyDashPlayer();
+            if (video) {
+                video.pause();
+                video.removeAttribute('src');
+                video.load();
+            }
+            if (player) {
+                player.classList.remove('credits-pip-mode');
+                player.style.display = 'none';
+            }
+            document.getElementById('creditsRatingOverlay')?.classList.add('hidden');
+            document.getElementById('subtitlesPopover')?.classList.add('hidden');
+            setBufferingOverlay(false);
+            renderCatalog();
+        };
+
+        function updatePlayPauseButtonIcon(isPlaying) {
+            const btn = document.querySelector('button[onclick="window.togglePlay()"]');
+            if (!btn) return;
+            btn.innerHTML = `<i data-lucide="${isPlaying ? 'pause' : 'play'}" id="playIcon" class="w-7 h-7 fill-current"></i>`;
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function updateMuteButtonIcon(isMuted) {
+            const btn = document.querySelector('button[onclick="window.toggleMute()"]');
+            if (!btn) return;
+            btn.innerHTML = `<i data-lucide="${isMuted ? 'volume-x' : 'volume-2'}" id="muteIcon" class="w-5 h-5"></i>`;
+            if (window.lucide) window.lucide.createIcons();
+        }
 
         window.togglePlay = () => {
             const video = document.getElementById('mainVideo');
             if (!video) return;
-            if (video.paused) video.play().catch(() => {});
-            else video.pause();
+            if (video.paused) {
+                video.play().catch(() => {});
+            } else {
+                video.pause();
+            }
         };
 
         window.skip = (deltaSeconds) => {
             const video = document.getElementById('mainVideo');
             if (!video) return;
-            seekVideoTo((video.currentTime || 0) + deltaSeconds);
+            seekVideoTo((video.currentTime || 0) + Number(deltaSeconds || 0));
         };
 
         window.toggleMute = () => {
             const video = document.getElementById('mainVideo');
             if (!video) return;
             video.muted = !video.muted;
+            updateMuteButtonIcon(video.muted || video.volume === 0);
         };
 
         window.setPlayerVolume = (val) => {
             const video = document.getElementById('mainVideo');
             if (!video) return;
-            video.volume = parseFloat(val);
-            video.muted = video.volume === 0;
+            const v = Math.max(0, Math.min(1, Number(val)));
+            video.volume = v;
+            video.muted = v === 0;
+            updateMuteButtonIcon(video.muted);
         };
 
         window.changePlaybackSpeed = (rate) => {
             const video = document.getElementById('mainVideo');
-            if (video) video.playbackRate = parseFloat(rate);
+            if (video) video.playbackRate = Number(rate) || 1;
         };
 
         window.toggleBrowserPiP = async () => {
             const video = document.getElementById('mainVideo');
             if (!video) return;
             try {
-                if (document.pictureInPictureElement) await document.exitPictureInPicture();
-                else if (video.requestPictureInPicture) await video.requestPictureInPicture();
-            } catch (e) {}
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else if (video.requestPictureInPicture) {
+                    await video.requestPictureInPicture();
+                }
+            } catch (e) {
+                window.showToast('מצב תמונה בתוך תמונה אינו נתמך בדפדפן זה', 'error');
+            }
         };
 
         window.toggleFullscreen = () => {
@@ -3386,52 +3537,38 @@ service cloud.firestore {
             }
         };
 
-        window.closePlayer = () => {
-            const player = document.getElementById('customPlayer');
-            const video = document.getElementById('mainVideo');
-            destroyDashPlayer();
-            if (video) {
-                video.pause();
-                video.removeAttribute('src');
-                video.load();
-            }
-            if (document.fullscreenElement) {
-                document.exitFullscreen?.().catch(() => {});
-            }
-            player?.classList.remove('credits-pip-mode');
-            document.getElementById('creditsRatingOverlay')?.classList.add('hidden');
-            if (player) player.style.display = 'none';
-            renderCatalog();
-        };
-
-        // 30-Seconds-Before-End Credits PiP Rating & Recommendations
-        function triggerCreditsPipOverlay() {
-            if (creditsTriggeredForCurrentPlay || !activePlayingItem) return;
+        function triggerCreditsPipExperience() {
+            if (creditsTriggeredForCurrentPlay) return;
             creditsTriggeredForCurrentPlay = true;
 
             const player = document.getElementById('customPlayer');
             const overlay = document.getElementById('creditsRatingOverlay');
-            const titleSpan = document.getElementById('creditsMovieTitle');
+            const titleEl = document.getElementById('creditsMovieTitle');
             const grid = document.getElementById('creditsRecommendationsGrid');
 
-            if (titleSpan) titleSpan.textContent = activePlayingItem.title;
-            player?.classList.add('credits-pip-mode');
-            overlay?.classList.remove('hidden');
-
+            if (titleEl && activePlayingItem) {
+                titleEl.textContent = activePlayingItem.title;
+            }
             if (grid) {
                 const recs = getFullMoviesList()
-                    .filter(m => m.id !== activePlayingItem.id && isItemAllowedForActiveProfile(m))
+                    .filter(m => m.id !== activePlayingItem?.id && isItemAllowedForActiveProfile(m))
                     .slice(0, 4);
-                grid.innerHTML = recs.map(r => `
-                    <div onclick="window.playMovie('${r.id}')" class="bg-zinc-950 border border-white/10 hover:border-red-500 rounded-2xl overflow-hidden cursor-pointer transition group">
-                        <img src="${r.poster || window.SAFE_POSTER_FALLBACK}" onerror="window.handleImgFallback(this)" class="w-full h-24 object-cover group-hover:scale-105 transition" alt="${r.title}">
+                grid.innerHTML = recs.map(m => `
+                    <div onclick="window.playMovie('${m.id}')" class="cursor-pointer group bg-zinc-950 border border-white/10 hover:border-red-500 rounded-2xl overflow-hidden transition">
+                        <div class="h-28 overflow-hidden relative">
+                            <img src="${m.poster || window.SAFE_POSTER_FALLBACK}" onerror="window.handleImgFallback(this)" class="w-full h-full object-cover group-hover:scale-105 transition" alt="${m.title}">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent"></div>
+                        </div>
                         <div class="p-2.5">
-                            <span class="text-xs font-extrabold text-white block truncate">${r.title}</span>
-                            <span class="text-[10px] text-gray-400">${r.categoryLabel}</span>
+                            <span class="text-xs font-extrabold text-white block truncate">${m.title}</span>
+                            <span class="text-[10px] text-gray-400">${m.categoryLabel || ''}</span>
                         </div>
                     </div>
                 `).join('');
             }
+
+            player?.classList.add('credits-pip-mode');
+            overlay?.classList.remove('hidden');
             if (window.lucide) window.lucide.createIcons();
         }
 
@@ -3441,162 +3578,202 @@ service cloud.firestore {
         };
 
         window.rateMovieExperience = (stars) => {
-            const feedback = document.getElementById('creditsRatingFeedback');
-            if (feedback) feedback.textContent = `דירגת ${stars}/5 כוכבים — תודה!`;
-            window.showToast(`הדירוג שלך (${stars}⭐) נשמר לשיפור ההמלצות`);
+            const fb = document.getElementById('creditsRatingFeedback');
+            if (fb) fb.textContent = `תודה! דירגת ${stars} מתוך 5 כוכבים`;
+            document.querySelectorAll('.star-rate-btn').forEach(btn => {
+                const s = Number(btn.dataset.star || 0);
+                btn.style.opacity = s <= stars ? '1' : '0.35';
+            });
+            window.showToast(`הדירוג (${stars}⭐) נשמר בהעדפות הפרופיל`);
         };
 
-        // Wire up Video Element Events & LTR Progress Bar
-        (function setupPlayerEventListeners() {
+        function resetHudAutoHideTimer() {
+            const player = document.getElementById('customPlayer');
+            if (!player) return;
+            player.classList.remove('hud-auto-hidden');
+            clearTimeout(hudHideTimer);
+            hudHideTimer = setTimeout(() => {
+                const video = document.getElementById('mainVideo');
+                const pop = document.getElementById('subtitlesPopover');
+                if (video && !video.paused && pop?.classList.contains('hidden')) {
+                    player.classList.add('hud-auto-hidden');
+                }
+            }, 3400);
+        }
+
+        function bindVideoPlayerEvents() {
             const video = document.getElementById('mainVideo');
             const progressBar = document.getElementById('progressBar');
-            const curTimeEl = document.getElementById('currentTime');
-            const durTimeEl = document.getElementById('durationTime');
-            const playerEl = document.getElementById('customPlayer');
+            const player = document.getElementById('customPlayer');
+            if (!video) return;
 
-            if (!video || !progressBar) return;
+            player?.addEventListener('mousemove', resetHudAutoHideTimer);
+            player?.addEventListener('touchstart', resetHudAutoHideTimer, { passive: true });
 
-            video.addEventListener('waiting', () => setBufferingOverlay(true, 'טוען...'));
-            video.addEventListener('playing', () => setBufferingOverlay(false));
-            video.addEventListener('canplay', () => setBufferingOverlay(false));
-
-            video.addEventListener('play', () => {
-                const icon = document.getElementById('playIcon');
-                if (icon) icon.setAttribute('data-lucide', 'pause');
-                if (window.lucide) window.lucide.createIcons();
+            video.addEventListener('loadedmetadata', () => {
+                const durEl = document.getElementById('durationTime');
+                if (durEl) durEl.textContent = formatTimecode(video.duration);
+                if (pendingResumeSeconds > 0 && isFinite(video.duration)) {
+                    seekVideoTo(pendingResumeSeconds);
+                    pendingResumeSeconds = 0;
+                }
             });
 
-            video.addEventListener('pause', () => {
-                const icon = document.getElementById('playIcon');
-                if (icon) icon.setAttribute('data-lucide', 'play');
-                if (window.lucide) window.lucide.createIcons();
-            });
-
+            let lastProgressSaveSec = 0;
             video.addEventListener('timeupdate', () => {
-                const dur = video.duration || 0;
-                const cur = video.currentTime || 0;
+                if (!isFinite(video.duration) || video.duration <= 0) return;
+                const cur = video.currentTime;
+                const curEl = document.getElementById('currentTime');
+                if (curEl) curEl.textContent = formatTimecode(cur);
 
-                if (!isDraggingProgress && dur > 0) {
-                    progressBar.value = String((cur / dur) * 100);
-                    if (curTimeEl) curTimeEl.textContent = formatTimecode(cur);
-                    if (durTimeEl) durTimeEl.textContent = formatTimecode(dur);
+                if (!isDraggingProgress && progressBar) {
+                    progressBar.value = String((cur / video.duration) * 100);
                 }
 
                 updateSubtitleOverlay(cur);
 
-                // Save continue watching progress
-                if (activePlayingItem && dur > 20 && cur > 5) {
-                    const map = getContinueWatchingMap();
-                    map[activePlayingItem.id] = { currentTime: cur, duration: dur };
-                    localStorage.setItem(getProfileStorageKey('progress'), JSON.stringify(map));
+                if (activePlayingItem && Math.abs(cur - lastProgressSaveSec) >= 4) {
+                    lastProgressSaveSec = cur;
+                    const pMap = getContinueWatchingMap();
+                    pMap[activePlayingItem.id] = { currentTime: cur, duration: video.duration, updatedAt: Date.now() };
+                    localStorage.setItem(getProfileStorageKey('progress'), JSON.stringify(pMap));
                 }
 
-                // Trigger 30-seconds-before-end PiP overlay
-                if (dur > 45 && (dur - cur) <= 30 && !creditsTriggeredForCurrentPlay) {
-                    triggerCreditsPipOverlay();
+                if (!creditsTriggeredForCurrentPlay && video.duration > 45 && (video.duration - cur) <= 30) {
+                    triggerCreditsPipExperience();
                 }
             });
 
-            progressBar.addEventListener('input', () => {
-                isDraggingProgress = true;
-                const dur = video.duration || 0;
-                const previewSec = (parseFloat(progressBar.value) / 100) * dur;
-                if (curTimeEl) curTimeEl.textContent = formatTimecode(previewSec);
+            video.addEventListener('waiting', () => setBufferingOverlay(true, 'טוען נתונים...'));
+            video.addEventListener('playing', () => {
+                setBufferingOverlay(false);
+                updatePlayPauseButtonIcon(true);
+            });
+            video.addEventListener('canplay', () => setBufferingOverlay(false));
+            video.addEventListener('pause', () => updatePlayPauseButtonIcon(false));
+
+            video.addEventListener('ended', () => {
+                if (activePlayingItem && hasNextSeriesEpisode(activePlayingItem, activePlayingSeason, activePlayingEpisode)) {
+                    window.showToast('עובר אוטומטית לפרק הבא...');
+                    window.playNextSeriesEpisode();
+                } else {
+                    triggerCreditsPipExperience();
+                }
             });
 
-            progressBar.addEventListener('change', () => {
-                const dur = video.duration || 0;
-                const targetSec = (parseFloat(progressBar.value) / 100) * dur;
-                seekVideoTo(targetSec);
-                isDraggingProgress = false;
+            video.addEventListener('error', () => {
+                if (activeServerIndex + 1 < currentStreamUrls.length) {
+                    startStreamAtIndex(activeServerIndex + 1);
+                } else {
+                    setBufferingOverlay(false);
+                }
             });
 
-            // Auto-hide HUD after 3.5s of mouse inactivity
-            playerEl?.addEventListener('mousemove', () => {
-                playerEl.classList.remove('hud-auto-hidden');
-                clearTimeout(hudHideTimer);
-                hudHideTimer = setTimeout(() => {
-                    if (!video.paused && !playerEl.classList.contains('credits-pip-mode')) {
-                        playerEl.classList.add('hud-auto-hidden');
+            if (progressBar) {
+                const startDrag = () => { isDraggingProgress = true; };
+                const endDrag = () => {
+                    if (!isDraggingProgress) return;
+                    isDraggingProgress = false;
+                    if (isFinite(video.duration) && video.duration > 0) {
+                        seekVideoTo((Number(progressBar.value) / 100) * video.duration);
                     }
-                }, 3500);
-            });
-        })();
+                };
+                progressBar.addEventListener('mousedown', startDrag);
+                progressBar.addEventListener('touchstart', startDrag, { passive: true });
+                progressBar.addEventListener('input', () => {
+                    if (isFinite(video.duration) && video.duration > 0) {
+                        const previewSec = (Number(progressBar.value) / 100) * video.duration;
+                        const curEl = document.getElementById('currentTime');
+                        if (curEl) curEl.textContent = formatTimecode(previewSec);
+                    }
+                });
+                progressBar.addEventListener('change', endDrag);
+                progressBar.addEventListener('mouseup', endDrag);
+                progressBar.addEventListener('touchend', endDrag);
+            }
+        }
 
         // =========================================================
-        // 8. Toast Notification Helper
-        // =========================================================
-        window.showToast = (message, type = 'info') => {
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            const borderClass = type === 'error'
-                ? 'border-red-500/60 bg-red-950/90 text-red-100'
-                : 'border-white/15 bg-zinc-900/95 text-white';
-            toast.className = `pointer-events-auto border ${borderClass} px-4 py-3 rounded-2xl shadow-2xl text-xs font-bold backdrop-blur-xl animate-fade-in max-w-sm`;
-            toast.textContent = message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => toast.remove(), 320);
-            }, 3400);
-        };
-
-        // =========================================================
-        // 9. Smart Adaptive Micro-Chunking on Firestore (No Storage)
+        // 9. Smart Adaptive Micro-Chunking & Turbo DASH-Style Stream
         // =========================================================
         const resolvedFirestoreBlobCache = new Map();
 
+        const segmentCacheDB = (() => {
+            let dbPromise = null;
+            function openCacheDB() {
+                if (dbPromise) return dbPromise;
+                dbPromise = new Promise((resolve) => {
+                    try {
+                        if (!window.indexedDB) { resolve(null); return; }
+                        const req = indexedDB.open('SmartStreamSegmentCache', 1);
+                        req.onupgradeneeded = (ev) => {
+                            const idb = ev.target.result;
+                            if (!idb.objectStoreNames.contains('chunks')) {
+                                idb.createObjectStore('chunks');
+                            }
+                        };
+                        req.onsuccess = () => resolve(req.result);
+                        req.onerror = () => resolve(null);
+                    } catch (e) {
+                        resolve(null);
+                    }
+                });
+                return dbPromise;
+            }
+            return {
+                async get(chunkId) {
+                    const idb = await openCacheDB();
+                    if (!idb) return null;
+                    return new Promise((resolve) => {
+                        try {
+                            const tx = idb.transaction('chunks', 'readonly');
+                            const req = tx.objectStore('chunks').get(chunkId);
+                            req.onsuccess = () => resolve(req.result || null);
+                            req.onerror = () => resolve(null);
+                        } catch (e) {
+                            resolve(null);
+                        }
+                    });
+                },
+                async put(chunkId, uint8Arr) {
+                    const idb = await openCacheDB();
+                    if (!idb) return;
+                    try {
+                        const tx = idb.transaction('chunks', 'readwrite');
+                        tx.objectStore('chunks').put(uint8Arr, chunkId);
+                    } catch (e) {}
+                }
+            };
+        })();
+
         function calculateAdaptiveChunkPlan(fileBytes) {
             const sizeMb = fileBytes / (1024 * 1024);
-            let chunkSizeBytes = 450 * 1024; // 450KB standard chunk (<=12MB)
-            let concurrency = 4;
+            let chunkSizeBytes = 450 * 1024;
+            let concurrency = 5;
             let mode = 'standard';
 
             if (sizeMb > 50) {
-                chunkSizeBytes = 220 * 1024; // 220KB ultra-micro chunk
-                concurrency = 6;
+                chunkSizeBytes = 240 * 1024;
+                concurrency = 7;
                 mode = 'adaptive-micro';
             } else if (sizeMb > 12) {
-                chunkSizeBytes = 280 * 1024; // 280KB micro chunk
-                concurrency = 5;
+                chunkSizeBytes = 300 * 1024;
+                concurrency = 6;
                 mode = 'adaptive-micro';
             }
 
-            const estimatedChunks = Math.max(1, Math.ceil(fileBytes / chunkSizeBytes));
-            return { sizeMb, chunkSizeBytes, concurrency, estimatedChunks, mode };
-        }
-
-        window.previewSelectedVideoChunkPlan = (file) => {
-            const badge = document.getElementById('videoChunkPlanBadge');
-            if (!badge) return;
-            if (!file) {
-                badge.classList.add('hidden');
-                return;
-            }
-            const plan = calculateAdaptiveChunkPlan(file.size);
-            badge.classList.remove('hidden');
-            badge.textContent = plan.mode === 'adaptive-micro'
-                ? `זוהה קובץ בנפח ${plan.sizeMb.toFixed(1)}MB — יפוצל אוטומטית ל-${plan.estimatedChunks} מיקרו-מקטעים (${Math.round(plan.chunkSizeBytes / 1024)}KB למקטע) ויוזרם בשיטת DASH.`
-                : `זוהה קובץ בנפח ${plan.sizeMb.toFixed(1)}MB — יישמר ב-${plan.estimatedChunks} מקטעים ב-Firestore Database.`;
-        };
-
-        function readBlobSliceSafely(blobSlice) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error || new Error('FileReader slice error'));
-                reader.readAsArrayBuffer(blobSlice);
-            });
+            const firstChunkBytes = Math.min(fileBytes, 180 * 1024);
+            const remainingBytes = Math.max(0, fileBytes - firstChunkBytes);
+            const estimatedChunks = 1 + (remainingBytes > 0 ? Math.ceil(remainingBytes / chunkSizeBytes) : 0);
+            return { sizeMb, firstChunkBytes, chunkSizeBytes, concurrency, estimatedChunks, mode };
         }
 
         function arrayBufferToBase64(buffer) {
             const bytes = new Uint8Array(buffer);
-            const step = 0x8000;
+            const chunkSize = 0x8000;
             let binary = '';
-            for (let i = 0; i < bytes.length; i += step) {
-                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + step));
+            for (let i = 0; i < bytes.length; i += chunkSize) {
+                binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
             }
             return btoa(binary);
         }
@@ -3612,107 +3789,114 @@ service cloud.firestore {
         }
 
         async function uploadVideoToFirestoreChunks(file, onProgress) {
-            if (!db) {
-                return { ok: false, reason: 'חיבור Firestore אינו זמין כרגע.' };
+            if (!db) throw new Error('Firestore לא מאותחל');
+            const plan = calculateAdaptiveChunkPlan(file.size);
+            const assetId = 'vid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+            const chunkDescriptors = [];
+
+            chunkDescriptors.push({
+                index: 0,
+                chunkId: `${assetId}_part_0000`,
+                start: 0,
+                end: plan.firstChunkBytes
+            });
+
+            let cursor = plan.firstChunkBytes;
+            let idx = 1;
+            while (cursor < file.size) {
+                const end = Math.min(file.size, cursor + plan.chunkSizeBytes);
+                chunkDescriptors.push({
+                    index: idx,
+                    chunkId: `${assetId}_part_${String(idx).padStart(4, '0')}`,
+                    start: cursor,
+                    end
+                });
+                cursor = end;
+                idx++;
             }
-            const authedAdmin = await ensureAdminFirebaseAuth();
-            if (authedAdmin && authedAdmin.errorCode === 'auth/operation-not-allowed') {
-                return {
-                    ok: false,
-                    reason: 'יש להפעיל את ספק Email/Password ב-Firebase Console תחת Authentication -> Sign-in method.'
-                };
-            }
-            if (!authedAdmin || !authedAdmin.email || authedAdmin.email.toLowerCase() !== ADMIN_CREATOR_EMAIL) {
-                updateUploadCloudAuthStatusUI();
-                return {
-                    ok: false,
-                    reason: 'הזן את סיסמת המנהל בתיבת "אמת חיבור לענן" שבראש הטופס ולחץ על הכפתור לפני הפרסום.'
-                };
-            }
 
-            try {
-                const plan = calculateAdaptiveChunkPlan(file.size);
-                const totalChunks = plan.estimatedChunks;
-                const assetId = 'vid_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-                const chunkDescriptors = [];
+            const totalChunks = chunkDescriptors.length;
+            let nextQueueIndex = 0;
+            let completedCount = 0;
 
-                for (let i = 0; i < totalChunks; i++) {
-                    const start = i * plan.chunkSizeBytes;
-                    const end = Math.min(file.size, start + plan.chunkSizeBytes);
-                    chunkDescriptors.push({
-                        index: i,
-                        chunkId: `${assetId}_part_${String(i).padStart(4, '0')}`,
-                        start,
-                        end
-                    });
-                }
-
-                let nextQueueIndex = 0;
-                let completedCount = 0;
-
-                const uploadWorker = async () => {
-                    while (true) {
-                        const currentIdx = nextQueueIndex++;
-                        if (currentIdx >= chunkDescriptors.length) break;
-                        const item = chunkDescriptors[currentIdx];
-
-                        const sliceBuffer = await readBlobSliceSafely(file.slice(item.start, item.end));
-                        const dataBase64 = arrayBufferToBase64(sliceBuffer);
-
-                        const chunkRef = doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", item.chunkId);
-                        await setDoc(chunkRef, {
+            const worker = async () => {
+                while (true) {
+                    const qIdx = nextQueueIndex++;
+                    if (qIdx >= totalChunks) break;
+                    const desc = chunkDescriptors[qIdx];
+                    const sliceBuffer = await file.slice(desc.start, desc.end).arrayBuffer();
+                    const dataBase64 = arrayBufferToBase64(sliceBuffer);
+                    await setDoc(
+                        doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", desc.chunkId),
+                        {
                             assetId,
-                            index: item.index,
+                            index: desc.index,
                             totalChunks,
-                            dataBase64,
-                            mimeType: file.type || 'video/mp4',
-                            createdAt: new Date().toISOString()
-                        });
-
-                        completedCount++;
-                        const pct = Math.round((completedCount / totalChunks) * 100);
-                        if (onProgress) onProgress(pct, completedCount, totalChunks);
+                            dataBase64
+                        }
+                    );
+                    completedCount++;
+                    if (onProgress) {
+                        onProgress(completedCount, totalChunks);
                     }
-                };
-
-                const workerCount = Math.min(plan.concurrency, chunkDescriptors.length);
-                await Promise.all(Array.from({ length: workerCount }, () => uploadWorker()));
-
-                return {
-                    ok: true,
-                    url: `firestore://video/${assetId}`,
-                    isDashXml: false,
-                    firestoreVideoAsset: {
-                        assetId,
-                        chunkIds: chunkDescriptors.map(c => c.chunkId),
-                        totalChunks,
-                        totalBytes: file.size,
-                        mimeType: file.type || 'video/mp4',
-                        chunkingMode: plan.mode
-                    }
-                };
-            } catch (err) {
-                console.error('Firestore adaptive chunk upload error:', err);
-                const isReadErr = err?.name === 'NotReadableError' || /could not be read/i.test(err?.message || '');
-                const isPermErr = err?.code === 'permission-denied' || /Missing or insufficient permissions/i.test(err?.message || '');
-                if (isPermErr) {
-                    syncFirebaseSetupBoxVisibility(true);
                 }
-                return {
-                    ok: false,
-                    reason: isReadErr
-                        ? 'הדפדפן איבד גישה לקובץ בזמן הקריאה — סגור תוכנות שמשתמשות בקובץ, העתק אותו לשולחן העבודה ובחר מחדש.'
-                        : isPermErr
-                            ? 'Firebase Firestore חסם את הכתיבה (Missing or insufficient permissions) — לחץ על "העתק Rules" למעלה ופרסם אותם בלשונית Rules בקונסול.'
-                            : `שגיאה בשמירת מקטעי הווידאו ב-Firestore: ${err.message || 'נסה שוב'}`
-                };
-            }
+            };
+
+            await Promise.all(Array.from({ length: Math.min(plan.concurrency, totalChunks) }, () => worker()));
+
+            return {
+                assetId,
+                mimeType: file.type || 'video/mp4',
+                totalBytes: file.size,
+                chunkIds: chunkDescriptors.map(d => d.chunkId)
+            };
         }
 
-        async function resolveFirestoreVideoBlobUrl(assetMeta, onSegmentProgress = null) {
+        function detectProgressiveMseMime(firstChunkBytes, declaredMime) {
+            if (!window.MediaSource || !firstChunkBytes || firstChunkBytes.length < 16) return null;
+            if (firstChunkBytes[0] === 0x1A && firstChunkBytes[1] === 0x45 && firstChunkBytes[2] === 0xDF && firstChunkBytes[3] === 0xA3) {
+                const candidates = [
+                    'video/webm; codecs="vp9, opus"',
+                    'video/webm; codecs="vp8, vorbis"',
+                    'video/webm'
+                ];
+                return candidates.find(m => MediaSource.isTypeSupported(m)) || null;
+            }
+            const probeLen = Math.min(firstChunkBytes.length, 8192);
+            let asciiProbe = '';
+            for (let i = 0; i < probeLen; i++) {
+                const c = firstChunkBytes[i];
+                asciiProbe += (c >= 32 && c <= 126) ? String.fromCharCode(c) : '.';
+            }
+            if (asciiProbe.includes('mvex') || asciiProbe.includes('moof')) {
+                const candidates = [
+                    'video/mp4; codecs="avc1.64001E, mp4a.40.2"',
+                    'video/mp4; codecs="avc1.42E01E, mp4a.40.2"',
+                    declaredMime || 'video/mp4'
+                ];
+                return candidates.find(m => MediaSource.isTypeSupported(m)) || null;
+            }
+            return null;
+        }
+
+        async function fetchSingleSegmentBytes(chunkId) {
+            const cached = await segmentCacheDB.get(chunkId);
+            if (cached && cached.byteLength > 0) {
+                return cached instanceof Uint8Array ? cached : new Uint8Array(cached);
+            }
+            const snap = await getDoc(doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", chunkId));
+            if (!snap.exists()) return null;
+            const data = snap.data();
+            const bytes = base64ToUint8Array(data.dataBase64);
+            segmentCacheDB.put(chunkId, bytes);
+            return bytes;
+        }
+
+        async function resolveFirestoreVideoStream(assetMeta, videoEl, abortSignal, onSegmentProgress = null) {
             if (!assetMeta || !Array.isArray(assetMeta.chunkIds) || assetMeta.chunkIds.length === 0) return null;
+
             if (resolvedFirestoreBlobCache.has(assetMeta.assetId)) {
-                return resolvedFirestoreBlobCache.get(assetMeta.assetId);
+                return { url: resolvedFirestoreBlobCache.get(assetMeta.assetId), isMse: false };
             }
             if (!db) return null;
 
@@ -3720,36 +3904,118 @@ service cloud.firestore {
                 await ensureFirebaseSession();
                 const total = assetMeta.chunkIds.length;
                 const fetchedParts = new Array(total);
+                const startTimeMs = performance.now();
+                let downloadedBytes = 0;
                 let loadedCount = 0;
-                const waveSize = 6; // Fetch 6 segments per parallel wave just like DASH segments
 
-                for (let offset = 0; offset < total; offset += waveSize) {
-                    const batchSlice = assetMeta.chunkIds.slice(offset, offset + waveSize);
-                    const snaps = await Promise.all(
-                        batchSlice.map(id => getDoc(doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", id)))
-                    );
-                    snaps.forEach((snap, idx) => {
-                        if (snap.exists()) {
-                            fetchedParts[offset + idx] = snap.data();
+                const chunk0 = await fetchSingleSegmentBytes(assetMeta.chunkIds[0]);
+                if (!chunk0 || abortSignal?.aborted) return null;
+                fetchedParts[0] = chunk0;
+                downloadedBytes += chunk0.byteLength;
+                loadedCount = 1;
+
+                const mseMime = detectProgressiveMseMime(chunk0, assetMeta.mimeType);
+                if (mseMime && videoEl && total > 1) {
+                    const mediaSource = new MediaSource();
+                    const mseUrl = URL.createObjectURL(mediaSource);
+                    videoEl.src = mseUrl;
+
+                    let mseFailed = false;
+                    let nextAppendIdx = 0;
+                    let sourceBuffer = null;
+
+                    const feedMseQueue = () => {
+                        if (mseFailed || !sourceBuffer || sourceBuffer.updating || abortSignal?.aborted) return;
+                        if (nextAppendIdx < total && fetchedParts[nextAppendIdx]) {
+                            try {
+                                sourceBuffer.appendBuffer(fetchedParts[nextAppendIdx]);
+                                nextAppendIdx++;
+                                if (nextAppendIdx === 2 && onSegmentProgress) {
+                                    onSegmentProgress(loadedCount, total, 0, true);
+                                    videoEl.play().catch(() => {});
+                                }
+                            } catch (e) {
+                                mseFailed = true;
+                            }
+                        } else if (nextAppendIdx === total && mediaSource.readyState === 'open') {
+                            try { mediaSource.endOfStream(); } catch (e) {}
                         }
-                    });
-                    loadedCount = Math.min(total, offset + batchSlice.length);
-                    if (onSegmentProgress) {
-                        onSegmentProgress(loadedCount, total);
+                    };
+
+                    mediaSource.addEventListener('sourceopen', () => {
+                        try {
+                            sourceBuffer = mediaSource.addSourceBuffer(mseMime);
+                            sourceBuffer.addEventListener('updateend', feedMseQueue);
+                            sourceBuffer.addEventListener('error', () => { mseFailed = true; });
+                            feedMseQueue();
+                        } catch (e) {
+                            mseFailed = true;
+                        }
+                    }, { once: true });
+
+                    let nextFetchIdx = 1;
+                    const bgWorker = async () => {
+                        while (!abortSignal?.aborted && !mseFailed) {
+                            const idx = nextFetchIdx++;
+                            if (idx >= total) break;
+                            const part = await fetchSingleSegmentBytes(assetMeta.chunkIds[idx]);
+                            if (part) {
+                                fetchedParts[idx] = part;
+                                loadedCount++;
+                                feedMseQueue();
+                            }
+                        }
+                    };
+                    const bgWorkers = Promise.all(Array.from({ length: Math.min(16, total - 1) }, () => bgWorker()));
+
+                    await new Promise((res) => setTimeout(res, 220));
+                    if (!mseFailed) {
+                        bgWorkers.then(() => {
+                            const valid = fetchedParts.filter(Boolean);
+                            if (valid.length === total) {
+                                const fullBlob = new Blob(valid, { type: assetMeta.mimeType || 'video/mp4' });
+                                resolvedFirestoreBlobCache.set(assetMeta.assetId, URL.createObjectURL(fullBlob));
+                            }
+                        });
+                        return { url: mseUrl, isMse: true };
                     }
+                    URL.revokeObjectURL(mseUrl);
                 }
 
-                const validParts = fetchedParts
-                    .filter(Boolean)
-                    .sort((a, b) => (a.index || 0) - (b.index || 0));
+                let nextFetchIdx = 1;
+                const workerCount = Math.min(16, Math.max(1, total - 1));
 
+                const slidingWorker = async () => {
+                    while (!abortSignal?.aborted) {
+                        const idx = nextFetchIdx++;
+                        if (idx >= total) break;
+                        const part = await fetchSingleSegmentBytes(assetMeta.chunkIds[idx]);
+                        if (part) {
+                            fetchedParts[idx] = part;
+                            downloadedBytes += part.byteLength;
+                            loadedCount++;
+                            if (onSegmentProgress) {
+                                const elapsedSec = Math.max(0.1, (performance.now() - startTimeMs) / 1000);
+                                const speedMbps = (downloadedBytes / (1024 * 1024)) / elapsedSec;
+                                onSegmentProgress(loadedCount, total, speedMbps, false);
+                            }
+                        }
+                    }
+                };
+
+                if (total > 1) {
+                    await Promise.all(Array.from({ length: workerCount }, () => slidingWorker()));
+                }
+
+                if (abortSignal?.aborted) return null;
+
+                const validParts = fetchedParts.filter(Boolean);
                 if (validParts.length === 0) return null;
 
-                const byteArrays = validParts.map(p => base64ToUint8Array(p.dataBase64));
-                const blob = new Blob(byteArrays, { type: assetMeta.mimeType || 'video/mp4' });
+                const blob = new Blob(validParts, { type: assetMeta.mimeType || 'video/mp4' });
                 const blobUrl = URL.createObjectURL(blob);
                 resolvedFirestoreBlobCache.set(assetMeta.assetId, blobUrl);
-                return blobUrl;
+                return { url: blobUrl, isMse: false };
             } catch (err) {
                 console.error('Firestore video stream assembly error:', err);
                 return null;
@@ -3758,134 +4024,53 @@ service cloud.firestore {
 
         function compressImageToSafeDataUrl(file, maxWidth = 640, quality = 0.78) {
             return new Promise((resolve) => {
+                if (!file) { resolve(''); return; }
                 const reader = new FileReader();
                 reader.onload = (ev) => {
                     const img = new Image();
                     img.onload = () => {
                         const scale = Math.min(1, maxWidth / (img.width || maxWidth));
-                        const w = Math.max(1, Math.round((img.width || maxWidth) * scale));
-                        const h = Math.max(1, Math.round((img.height || maxWidth) * scale));
                         const canvas = document.createElement('canvas');
-                        canvas.width = w;
-                        canvas.height = h;
+                        canvas.width = Math.max(1, Math.round(img.width * scale));
+                        canvas.height = Math.max(1, Math.round(img.height * scale));
                         const ctx = canvas.getContext('2d');
-                        if (!ctx) {
-                            resolve(null);
-                            return;
-                        }
-                        ctx.drawImage(img, 0, 0, w, h);
-                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                        resolve(dataUrl.length < 350000 ? dataUrl : null);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
                     };
-                    img.onerror = () => resolve(null);
+                    img.onerror = () => resolve(String(ev.target?.result || ''));
                     img.src = String(ev.target?.result || '');
                 };
-                reader.onerror = () => resolve(null);
+                reader.onerror = () => resolve('');
                 reader.readAsDataURL(file);
             });
         }
 
-        async function uploadFileToPublicCloud(file, folderName, onProgress) {
-            if (!file) return { ok: false, url: null, reason: 'לא נבחר קובץ' };
-
-            const isImageAsset = folderName === 'posters' || folderName === 'logos';
-            if (isImageAsset) {
-                const compressedDataUrl = await compressImageToSafeDataUrl(file);
-                if (!compressedDataUrl) {
-                    return { ok: false, url: null, reason: 'לא ניתן לעבד את קובץ התמונה' };
-                }
-                return { ok: true, url: compressedDataUrl, isDashXml: false };
+        // =========================================================
+        // 10. Creator Upload Modal & Admin Dashboard Logic
+        // =========================================================
+        function normalizeMediaUrl(rawUrl) {
+            let url = (rawUrl || '').trim();
+            if (!url) return '';
+            if (url.startsWith('http://')) {
+                url = 'https://' + url.slice('http://'.length);
             }
-
-            return await uploadVideoToFirestoreChunks(file, onProgress);
+            if (url.includes('dropbox.com')) {
+                url = url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/\?dl=[01]$/, '');
+            }
+            if (url.includes('github.com') && url.includes('/blob/')) {
+                url = url.replace('https://github.com/', 'https://raw.githubusercontent.com/').replace('/blob/', '/');
+            }
+            return url;
         }
-
-        // =========================================================
-        // 12. Creator / Studio Upload & Admin Dashboard Logic
-        // =========================================================
-        window.normalizeHttpsMediaUrl = (rawUrl) => {
-            const trimmed = (rawUrl || '').trim();
-            if (!trimmed) return { url: '', upgradedFromHttp: false, isDashXml: false };
-            let upgraded = false;
-            let cleanUrl = trimmed;
-            if (/^http:\/\//i.test(cleanUrl)) {
-                cleanUrl = cleanUrl.replace(/^http:\/\//i, 'https://');
-                upgraded = true;
-            } else if (!/^https:\/\//i.test(cleanUrl) && !cleanUrl.startsWith('data:') && !cleanUrl.startsWith('blob:')) {
-                cleanUrl = 'https://' + cleanUrl;
-                upgraded = true;
-            }
-            const isDashXml = /\.mpd(\?|$)/i.test(cleanUrl) || /application\/dash\+xml/i.test(cleanUrl);
-            return { url: cleanUrl, upgradedFromHttp: upgraded, isDashXml };
-        };
-
-        window.previewNormalizedMediaUrl = (rawVal) => {
-            const statusBox = document.getElementById('creatorUrlTestStatus');
-            if (!statusBox) return;
-            const trimmed = (rawVal || '').trim();
-            if (!trimmed) {
-                statusBox.classList.add('hidden');
-                return;
-            }
-            const info = window.normalizeHttpsMediaUrl(trimmed);
-            statusBox.classList.remove('hidden', 'bg-red-500/20', 'text-red-300', 'bg-emerald-500/20', 'text-emerald-300', 'bg-amber-500/20', 'text-amber-300');
-            if (info.isDashXml) {
-                statusBox.classList.add('bg-amber-500/20', 'text-amber-300');
-                statusBox.textContent = `זוהה מניפסט DASH XML מאובטח (${info.url}) — יופעל אוטומטית דרך מנוע dash.js.`;
-            } else if (info.upgradedFromHttp) {
-                statusBox.classList.add('bg-emerald-500/20', 'text-emerald-300');
-                statusBox.textContent = `הקישור הומר אוטומטית לפורמט מאובטח: ${info.url}`;
-            } else {
-                statusBox.classList.add('bg-emerald-500/20', 'text-emerald-300');
-                statusBox.textContent = `פורמט HTTPS תקין ✓`;
-            }
-        };
-
-        window.testCreatorMediaUrl = async () => {
-            const input = document.getElementById('creatorMovieUrl');
-            const statusBox = document.getElementById('creatorUrlTestStatus');
-            if (!input || !statusBox) return;
-
-            const info = window.normalizeHttpsMediaUrl(input.value);
-            if (!info.url) {
-                window.showToast('הזן קישור HTTPS לבדיקה', 'error');
-                return;
-            }
-            input.value = info.url;
-            statusBox.classList.remove('hidden', 'bg-red-500/20', 'text-red-300', 'bg-emerald-500/20', 'text-emerald-300');
-            statusBox.classList.add('bg-amber-500/20', 'text-amber-300');
-            statusBox.textContent = 'בודק חיבור HTTPS לשרת המדיה...';
-
-            try {
-                const res = await fetch(info.url, { method: 'HEAD' });
-                statusBox.classList.remove('bg-amber-500/20', 'text-amber-300');
-                if (res.ok) {
-                    statusBox.classList.add('bg-emerald-500/20', 'text-emerald-300');
-                    statusBox.textContent = `הקישור פעיל ומאובטח (HTTPS ${res.status}) ✓`;
-                } else {
-                    statusBox.classList.add('bg-red-500/20', 'text-red-300');
-                    statusBox.textContent = `השרת החזיר קוד ${res.status} — ודא שהקישור ציבורי ותקין.`;
-                }
-            } catch (err) {
-                statusBox.classList.remove('bg-amber-500/20', 'text-amber-300');
-                statusBox.classList.add('bg-emerald-500/20', 'text-emerald-300');
-                statusBox.textContent = 'פורמט HTTPS אומת (השרת חוסם בדיקת HEAD אך ינגן ישירות בתוך הנגן).';
-            }
-        };
 
         window.openCreatorUploadModal = () => {
             if (!window.isAdminCreator()) {
-                window.showToast('העלאת תכנים פתוחה לחשבון היוצר המורשה בלבד', 'error');
+                window.showToast('רק מנהל הפלטפורמה מורשה להעלות תכנים ציבוריים', 'error');
                 return;
             }
-            populateExistingSeriesSelect();
-            window.toggleUploadMediaType('movie');
-            window.toggleOwnershipFields('external');
-            syncFirebaseSetupBoxVisibility(false);
+            populateExistingSeriesDropdown();
             updateUploadCloudAuthStatusUI();
-            document.getElementById('videoChunkPlanBadge')?.classList.add('hidden');
-            document.getElementById('creatorUrlTestStatus')?.classList.add('hidden');
-            document.getElementById('cloudUploadProgressBox')?.classList.add('hidden');
+            syncFirebaseSetupBoxVisibility(false);
             document.getElementById('creatorUploadModal')?.classList.remove('hidden');
             if (window.lucide) window.lucide.createIcons();
         };
@@ -3894,343 +4079,318 @@ service cloud.firestore {
             document.getElementById('creatorUploadModal')?.classList.add('hidden');
         };
 
+        function populateExistingSeriesDropdown() {
+            const sel = document.getElementById('existingSeriesSelect');
+            if (!sel) return;
+            const seriesItems = getFullMoviesList().filter(m => m.isSeries);
+            sel.innerHTML = `<option value="__new__">+ צור סדרה חדשה בקטלוג</option>` +
+                seriesItems.map(s => `<option value="${s.id}">הוסף פרק אל: ${s.title}</option>`).join('');
+        }
+
         window.toggleUploadMediaType = (type) => {
             const seriesFields = document.getElementById('seriesUploadFields');
-            const newMetaFields = document.getElementById('newTitleMetadataFields');
-            const titleInput = document.getElementById('creatorMovieTitle');
+            const catSelect = document.getElementById('creatorMovieCategory');
             if (type === 'series') {
                 seriesFields?.classList.remove('hidden');
-                const sel = document.getElementById('existingSeriesSelect')?.value || '__new__';
-                if (sel !== '__new__') {
-                    newMetaFields?.classList.add('hidden');
-                    if (titleInput) titleInput.required = false;
-                } else {
-                    newMetaFields?.classList.remove('hidden');
-                    if (titleInput) titleInput.required = true;
-                }
+                if (catSelect) catSelect.value = 'series';
             } else {
                 seriesFields?.classList.add('hidden');
-                newMetaFields?.classList.remove('hidden');
-                if (titleInput) titleInput.required = true;
+                document.getElementById('newTitleMetadataFields')?.classList.remove('hidden');
             }
         };
 
         window.toggleOwnershipFields = (ownership) => {
             const extFields = document.getElementById('externalCreatorFields');
-            const studioInput = document.getElementById('creatorStudioNameInput');
+            if (!extFields) return;
             if (ownership === 'original') {
-                extFields?.classList.add('hidden');
-                if (studioInput) studioInput.required = false;
+                extFields.classList.add('hidden');
             } else {
-                extFields?.classList.remove('hidden');
-                if (studioInput) studioInput.required = true;
+                extFields.classList.remove('hidden');
             }
         };
 
-        function populateExistingSeriesSelect() {
-            const select = document.getElementById('existingSeriesSelect');
-            if (!select) return;
-            const allSeries = getFullMoviesList().filter(m => m.isSeries);
-            select.innerHTML = `<option value="__new__">+ צור סדרה חדשה בקטלוג</option>` +
-                allSeries.map(s => `<option value="${s.id}">הוסף פרק לסדרה: ${s.title}</option>`).join('');
-        }
-
         window.handleExistingSeriesChange = (val) => {
-            const newMetaFields = document.getElementById('newTitleMetadataFields');
+            const metaFields = document.getElementById('newTitleMetadataFields');
             const titleInput = document.getElementById('creatorMovieTitle');
             if (val === '__new__') {
-                newMetaFields?.classList.remove('hidden');
+                metaFields?.classList.remove('hidden');
                 if (titleInput) titleInput.required = true;
             } else {
-                newMetaFields?.classList.add('hidden');
+                metaFields?.classList.add('hidden');
                 if (titleInput) titleInput.required = false;
             }
         };
 
+        window.previewSelectedVideoChunkPlan = (file) => {
+            const badge = document.getElementById('videoChunkPlanBadge');
+            if (!badge) return;
+            if (!file) {
+                badge.classList.add('hidden');
+                return;
+            }
+            const plan = calculateAdaptiveChunkPlan(file.size);
+            badge.textContent = `זוהה קובץ במשקל ${plan.sizeMb.toFixed(1)} MB • יפוצל אוטומטית ל-${plan.estimatedChunks} מקטעי הזרמה מהירים (${Math.round(plan.chunkSizeBytes / 1024)}KB למקטע)`;
+            badge.classList.remove('hidden');
+        };
+
+        window.previewNormalizedMediaUrl = (raw) => {
+            const status = document.getElementById('creatorUrlTestStatus');
+            if (!status) return;
+            const norm = normalizeMediaUrl(raw);
+            if (!norm) {
+                status.classList.add('hidden');
+                return;
+            }
+            status.className = 'text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-zinc-800 text-gray-300';
+            status.textContent = `כתובת הזרמה מעובדת: ${norm}`;
+            status.classList.remove('hidden');
+        };
+
+        window.testCreatorMediaUrl = () => {
+            const input = document.getElementById('creatorMovieUrl');
+            const status = document.getElementById('creatorUrlTestStatus');
+            if (!input || !status) return;
+            const norm = normalizeMediaUrl(input.value);
+            input.value = norm;
+            if (!norm.startsWith('https://')) {
+                status.className = 'text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-red-950/70 text-red-300 border border-red-500/40';
+                status.textContent = 'הקישור חייב להתחיל ב-https:// מאובטח';
+                status.classList.remove('hidden');
+                return;
+            }
+            status.className = 'text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-emerald-950/70 text-emerald-300 border border-emerald-500/40';
+            status.textContent = 'כתובת HTTPS מאובטחת ותקינה מוכנה להזרמה ✓';
+            status.classList.remove('hidden');
+        };
+
         window.handleCreatorUploadSubmit = async (e) => {
             e.preventDefault();
-            if (!window.isAdminCreator()) return;
-
-            const legalAck = document.getElementById('creatorLegalAckCheck');
-            if (legalAck && !legalAck.checked) {
-                window.showToast('יש לאשר עמידה בתנאי השימוש וזכויות היוצרים', 'error');
+            if (!window.isAdminCreator()) {
+                window.showToast('אין הרשאת פרסום', 'error');
                 return;
             }
 
             const submitBtn = document.getElementById('creatorUploadSubmitBtn');
             const progressBox = document.getElementById('cloudUploadProgressBox');
             const progressBar = document.getElementById('cloudUploadProgressBar');
-            const progressPercent = document.getElementById('cloudUploadPercentText');
-            const progressStatus = document.getElementById('cloudUploadStatusText');
+            const statusText = document.getElementById('cloudUploadStatusText');
+            const percentText = document.getElementById('cloudUploadPercentText');
 
             const mediaType = document.querySelector('input[name="uploadMediaType"]:checked')?.value || 'movie';
-            const isSeries = mediaType === 'series';
-            const ownershipVal = document.querySelector('input[name="uploadOwnershipType"]:checked')?.value || 'external';
-            const isCreatorOriginal = ownershipVal === 'original';
+            const ownershipType = document.querySelector('input[name="uploadOwnershipType"]:checked')?.value || 'external';
+            const isCreatorOriginal = ownershipType === 'original';
 
-            const creatorName = isCreatorOriginal
-                ? 'Smart Creator Studio'
-                : (document.getElementById('creatorStudioNameInput')?.value.trim() || 'יוצר חיצוני');
+            const creatorStudioName = isCreatorOriginal
+                ? 'Smart Original'
+                : (document.getElementById('creatorStudioNameInput').value.trim() || 'יוצר חיצוני');
 
-            const fileInput = document.getElementById('creatorMovieFile');
-            const rawUrlInput = document.getElementById('creatorMovieUrl').value.trim();
-            const videoFile = fileInput?.files?.[0] || null;
+            const existingSeriesId = document.getElementById('existingSeriesSelect')?.value || '__new__';
+            const isAddingToExistingSeries = mediaType === 'series' && existingSeriesId !== '__new__';
 
-            if (!videoFile && !rawUrlInput) {
-                window.showToast('יש לבחור קובץ מהמחשב או להזין קישור HTTPS ישיר', 'error');
+            const title = document.getElementById('creatorMovieTitle').value.trim();
+            if (!isAddingToExistingSeries && !title) {
+                window.showToast('יש להזין שם לסרט או לסדרה', 'error');
+                return;
+            }
+
+            const videoFile = document.getElementById('creatorMovieFile').files?.[0] || null;
+            const rawVideoUrl = document.getElementById('creatorMovieUrl').value;
+            const normalizedVideoUrl = normalizeMediaUrl(rawVideoUrl);
+
+            if (!videoFile && !normalizedVideoUrl) {
+                window.showToast('בחר קובץ וידאו מהמחשב או הדבק קישור HTTPS', 'error');
                 return;
             }
 
             if (submitBtn) submitBtn.disabled = true;
+            progressBox?.classList.remove('hidden');
+            if (statusText) statusText.textContent = 'מאמת הרשאות מנהל מול Firebase...';
+            if (percentText) percentText.textContent = '5%';
+            if (progressBar) progressBar.style.width = '5%';
 
-            // Read & compress small image assets immediately before multi-second video chunking
-            const studioLogoFile = document.getElementById('creatorStudioLogoFile')?.files?.[0] || null;
-            let finalCreatorLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorStudioLogoUrl')?.value).url;
-            if (studioLogoFile) {
-                const res = await uploadFileToPublicCloud(studioLogoFile, 'logos', null);
-                if (res.ok && res.url) finalCreatorLogo = res.url;
-            }
-
-            const titleLogoFile = document.getElementById('creatorTitleLogoFile')?.files?.[0] || null;
-            let finalTitleLogo = window.normalizeHttpsMediaUrl(document.getElementById('creatorTitleLogoUrl')?.value).url;
-            if (titleLogoFile) {
-                const res = await uploadFileToPublicCloud(titleLogoFile, 'logos', null);
-                if (res.ok && res.url) finalTitleLogo = res.url;
-            }
-
-            const posterFile = document.getElementById('creatorMoviePosterFile')?.files?.[0] || null;
-            let finalPosterUrl = window.normalizeHttpsMediaUrl(document.getElementById('creatorMoviePoster')?.value).url;
-            if (posterFile) {
-                const res = await uploadFileToPublicCloud(posterFile, 'posters', null);
-                if (res.ok && res.url) finalPosterUrl = res.url;
-            }
-
-            if (videoFile && progressBox) {
-                const initPlan = calculateAdaptiveChunkPlan(videoFile.size);
-                progressBox.classList.remove('hidden');
-                if (progressStatus) {
-                    progressStatus.textContent = initPlan.mode === 'adaptive-micro'
-                        ? `קובץ ${initPlan.sizeMb.toFixed(1)}MB זוהה — חותך ושומר ${initPlan.estimatedChunks} מיקרו-מקטעים...`
-                        : `שומר ${initPlan.estimatedChunks} מקטעים ב-Firestore Database...`;
-                }
-            }
-
-            let finalVideoUrl = '';
-            let firestoreVideoAsset = null;
-            let isDashXmlStream = false;
-
-            if (videoFile) {
-                const uploadRes = await uploadFileToPublicCloud(videoFile, 'videos', (pct, done, total) => {
-                    if (progressBar) progressBar.style.width = `${pct}%`;
-                    if (progressPercent) progressPercent.textContent = `${pct}% (${done}/${total})`;
-                });
-                if (!uploadRes.ok || !uploadRes.url) {
+            try {
+                const adminAuthRes = await ensureAdminFirebaseAuth();
+                if (!adminAuthRes || adminAuthRes.errorCode || !adminAuthRes.email || adminAuthRes.email.toLowerCase() !== ADMIN_CREATOR_EMAIL) {
+                    updateUploadCloudAuthStatusUI();
+                    window.showToast('יש להזין את סיסמת המנהל למעלה ("אמת חיבור לענן") לפני הפרסום', 'error');
                     if (submitBtn) submitBtn.disabled = false;
-                    if (progressBox) progressBox.classList.add('hidden');
-                    window.showToast(uploadRes.reason || 'שגיאה בשמירת הקובץ ב-Firestore', 'error');
+                    progressBox?.classList.add('hidden');
                     return;
                 }
-                finalVideoUrl = uploadRes.url;
-                firestoreVideoAsset = uploadRes.firestoreVideoAsset || null;
-                isDashXmlStream = Boolean(uploadRes.isDashXml);
-            } else {
-                const normalizedVid = window.normalizeHttpsMediaUrl(rawUrlInput);
-                if (!normalizedVid.url || !normalizedVid.url.startsWith('https://')) {
-                    if (submitBtn) submitBtn.disabled = false;
-                    window.showToast('יש להזין קישור תקין בפורמט https://', 'error');
-                    return;
+
+                // Read & compress optional local image files immediately
+                const posterFile = document.getElementById('creatorMoviePosterFile').files?.[0] || null;
+                const titleLogoFile = document.getElementById('creatorTitleLogoFile').files?.[0] || null;
+                const studioLogoFile = document.getElementById('creatorStudioLogoFile').files?.[0] || null;
+
+                const posterUrlInput = normalizeMediaUrl(document.getElementById('creatorMoviePoster').value);
+                const titleLogoUrlInput = normalizeMediaUrl(document.getElementById('creatorTitleLogoUrl').value);
+                const studioLogoUrlInput = normalizeMediaUrl(document.getElementById('creatorStudioLogoUrl').value);
+
+                const [posterData, titleLogoData, studioLogoData] = await Promise.all([
+                    posterFile ? compressImageToSafeDataUrl(posterFile, 720, 0.8) : Promise.resolve(posterUrlInput || window.SAFE_POSTER_FALLBACK),
+                    titleLogoFile ? compressImageToSafeDataUrl(titleLogoFile, 480, 0.85) : Promise.resolve(titleLogoUrlInput),
+                    (!isCreatorOriginal && studioLogoFile) ? compressImageToSafeDataUrl(studioLogoFile, 240, 0.85) : Promise.resolve(isCreatorOriginal ? '' : studioLogoUrlInput)
+                ]);
+
+                let firestoreVideoAsset = null;
+                if (videoFile) {
+                    firestoreVideoAsset = await uploadVideoToFirestoreChunks(videoFile, (done, total) => {
+                        const pct = Math.min(95, Math.round(10 + (done / total) * 85));
+                        if (statusText) statusText.textContent = `מעלה מקטע ${done} מתוך ${total} ל-Firestore...`;
+                        if (percentText) percentText.textContent = `${pct}%`;
+                        if (progressBar) progressBar.style.width = `${pct}%`;
+                    });
                 }
-                finalVideoUrl = normalizedVid.url;
-                isDashXmlStream = normalizedVid.isDashXml;
-            }
 
-            const cloudAuthCheck = await ensureAdminFirebaseAuth();
-            if (!cloudAuthCheck || cloudAuthCheck.errorCode || !cloudAuthCheck.email) {
-                if (submitBtn) submitBtn.disabled = false;
-                if (progressBox) progressBox.classList.add('hidden');
-                window.showToast(
-                    cloudAuthCheck?.errorCode === 'auth/operation-not-allowed'
-                        ? 'יש להפעיל Email/Password ב-Firebase Console תחת Authentication -> Sign-in method'
-                        : 'הזן סיסמת מנהל בתיבת "אמת חיבור לענן" שבראש הטופס לפני הפרסום',
-                    'error'
-                );
-                return;
-            }
-            const targetSeriesId = document.getElementById('existingSeriesSelect')?.value || '__new__';
+                if (statusText) statusText.textContent = 'שומר ומפיץ לקטלוג הציבורי...';
+                if (percentText) percentText.textContent = '98%';
+                if (progressBar) progressBar.style.width = '98%';
 
-            if (isSeries && targetSeriesId !== '__new__') {
-                const seasonNum = parseInt(document.getElementById('seriesSeasonNumInput')?.value, 10) || 1;
-                const episodeNum = parseInt(document.getElementById('seriesEpisodeNumInput')?.value, 10) || 1;
+                const seasonNum = Math.max(1, Number(document.getElementById('seriesSeasonNumInput')?.value || 1));
+                const episodeNum = Math.max(1, Number(document.getElementById('seriesEpisodeNumInput')?.value || 1));
                 const episodeTitle = document.getElementById('seriesEpisodeTitleInput')?.value.trim() || `פרק ${episodeNum}`;
 
-                const targetSeries = getFullMoviesList().find(m => m.id === targetSeriesId);
-                if (targetSeries) {
-                    const updatedSeasons = Array.isArray(targetSeries.seasons) ? JSON.parse(JSON.stringify(targetSeries.seasons)) : [];
-                    let seasonObj = updatedSeasons.find(s => Number(s.seasonNumber) === seasonNum);
-                    if (!seasonObj) {
-                        seasonObj = { seasonNumber: seasonNum, episodes: [] };
-                        updatedSeasons.push(seasonObj);
+                let targetDocId = '';
+                let finalPayload = null;
+
+                if (isAddingToExistingSeries) {
+                    const existingSeries = getFullMoviesList().find(m => m.id === existingSeriesId);
+                    if (!existingSeries) throw new Error('הסדרה שנבחרה לא נמצאה');
+                    targetDocId = existingSeries.id;
+                    const updatedSeasons = JSON.parse(JSON.stringify(existingSeries.seasons || []));
+                    let targetSeason = updatedSeasons.find(s => Number(s.seasonNumber) === seasonNum);
+                    if (!targetSeason) {
+                        targetSeason = { seasonNumber: seasonNum, episodes: [] };
+                        updatedSeasons.push(targetSeason);
                         updatedSeasons.sort((a, b) => a.seasonNumber - b.seasonNumber);
                     }
-                    seasonObj.episodes.push({
-                        id: 'ep_' + Date.now(),
+                    targetSeason.episodes.push({
+                        id: `${targetDocId}_s${seasonNum}e${episodeNum}_${Date.now()}`,
                         season: seasonNum,
                         episode: episodeNum,
                         title: episodeTitle,
-                        duration: 'HD',
-                        videoUrl: finalVideoUrl,
-                        firestoreVideoAsset: firestoreVideoAsset,
-                        fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4']
+                        duration: videoFile ? `${Math.max(1, Math.round(videoFile.size / (1024 * 1024)))} MB` : 'HD',
+                        videoUrl: normalizedVideoUrl,
+                        fallbackUrls: normalizedVideoUrl ? [normalizedVideoUrl] : [],
+                        firestoreVideoAsset
                     });
-                    seasonObj.episodes.sort((a, b) => a.episode - b.episode);
-
+                    targetSeason.episodes.sort((a, b) => a.episode - b.episode);
                     const totalEps = updatedSeasons.reduce((acc, s) => acc + (s.episodes?.length || 0), 0);
-                    const updatedSeriesObj = {
-                        ...targetSeries,
+
+                    finalPayload = {
+                        ...existingSeries,
                         seasons: updatedSeasons,
-                        duration: `סדרה (${totalEps} פרקים)`
+                        duration: `סדרה (${totalEps} פרקים)`,
+                        updatedAt: Date.now()
+                    };
+                } else {
+                    targetDocId = 'custom_' + Date.now();
+                    const category = mediaType === 'series' ? 'series' : (document.getElementById('creatorMovieCategory')?.value || 'creator');
+                    const catLabels = {
+                        creator: 'יצירות מקוריות',
+                        series: 'סדרות ועונות',
+                        scifi: 'מדע בדיוני ואקשן',
+                        family: 'אנימציות לכל המשפחה',
+                        classics: 'נחלת הכלל וקלאסיקות'
+                    };
+                    const ageRating = document.getElementById('creatorMovieAge')?.value || '13';
+                    const description = document.getElementById('creatorMovieDesc')?.value.trim() || '';
+
+                    finalPayload = {
+                        id: targetDocId,
+                        title,
+                        titleLogo: titleLogoData || '',
+                        category,
+                        categoryLabel: catLabels[category] || 'תוכן מועלה',
+                        ageRating,
+                        duration: mediaType === 'series' ? 'סדרה (פרק 1)' : (videoFile ? `${Math.max(1, Math.round(videoFile.size / (1024 * 1024)))} MB` : 'HD'),
+                        isSeries: mediaType === 'series',
+                        isCreatorOriginal,
+                        creatorName: creatorStudioName,
+                        creatorLogo: studioLogoData || '',
+                        description,
+                        poster: posterData,
+                        videoUrl: normalizedVideoUrl,
+                        fallbackUrls: normalizedVideoUrl ? [normalizedVideoUrl] : [],
+                        firestoreVideoAsset,
+                        createdAt: Date.now()
                     };
 
-                    const customIdx = creatorCustomMovies.findIndex(m => m.id === targetSeries.id);
-                    if (customIdx !== -1) creatorCustomMovies[customIdx] = updatedSeriesObj;
-                    else creatorCustomMovies.unshift(updatedSeriesObj);
-
-                    localStorage.setItem('smartstream_public_creator_movies', JSON.stringify(creatorCustomMovies));
-
-                    if (db) {
-                        try {
-                            const pubRef = doc(db, "artifacts", appId, "public", "data", "smartstream_creator_movies", updatedSeriesObj.id);
-                            await setDoc(pubRef, updatedSeriesObj, { merge: true });
-                        } catch (err) {
-                            console.warn("Series Firestore update error:", err);
-                        }
-                    }
-
-                    if (submitBtn) submitBtn.disabled = false;
-                    if (progressBox) progressBox.classList.add('hidden');
-                    window.closeCreatorUploadModal();
-                    renderCatalog();
-                    window.showToast(`פרק ${episodeNum} נוסף לסדרה "${targetSeries.title}" ונשמר ב-Firestore!`);
-                    return;
-                }
-            }
-
-            const title = document.getElementById('creatorMovieTitle').value.trim();
-            const categoryEl = document.getElementById('creatorMovieCategory');
-            const category = isSeries ? 'series' : (categoryEl ? categoryEl.value : 'creator');
-            const ageRating = document.getElementById('creatorMovieAge').value;
-            const description = document.getElementById('creatorMovieDesc').value.trim()
-                || (isCreatorOriginal ? 'יצירה מקורית מבית Smart Creator Studio.' : `תוכן מבית ${creatorName}.`);
-
-            const categoryLabelsMap = {
-                creator: 'יצירה מקורית',
-                series: 'סדרות ועונות',
-                scifi: 'מדע בדיוני ואקשן',
-                family: 'אנימציות לכל המשפחה',
-                classics: 'נחלת הכלל וקלאסיקות'
-            };
-
-            const newMediaItem = {
-                id: 'pub_' + Date.now(),
-                title,
-                titleLogo: finalTitleLogo || '',
-                category,
-                categoryLabel: categoryLabelsMap[category] || 'תוכן ציבורי',
-                ageRating,
-                duration: isSeries ? 'סדרה (עונה 1 • פרק 1)' : 'HD • שידור מלא',
-                isSeries,
-                isCreatorOriginal,
-                creatorName,
-                creatorLogo: isCreatorOriginal ? '' : (finalCreatorLogo || ''),
-                description,
-                poster: finalPosterUrl || window.SAFE_POSTER_FALLBACK,
-                dashUrl: isDashXmlStream ? finalVideoUrl : null,
-                videoUrl: finalVideoUrl,
-                firestoreVideoAsset: firestoreVideoAsset,
-                fallbackUrls: [
-                    finalVideoUrl,
-                    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4'
-                ],
-                uploadedBy: currentUser?.email || ADMIN_CREATOR_EMAIL,
-                createdAt: new Date().toISOString()
-            };
-
-            if (isSeries) {
-                const seasonNum = parseInt(document.getElementById('seriesSeasonNumInput')?.value, 10) || 1;
-                const episodeNum = parseInt(document.getElementById('seriesEpisodeNumInput')?.value, 10) || 1;
-                const episodeTitle = document.getElementById('seriesEpisodeTitleInput')?.value.trim() || `פרק ${episodeNum}`;
-                newMediaItem.seasons = [
-                    {
-                        seasonNumber: seasonNum,
-                        episodes: [
-                            {
-                                id: 'ep_' + Date.now(),
+                    if (mediaType === 'series') {
+                        finalPayload.seasons = [{
+                            seasonNumber: seasonNum,
+                            episodes: [{
+                                id: `${targetDocId}_s${seasonNum}e${episodeNum}`,
                                 season: seasonNum,
                                 episode: episodeNum,
                                 title: episodeTitle,
                                 duration: 'HD',
-                                videoUrl: finalVideoUrl,
-                                firestoreVideoAsset: firestoreVideoAsset,
-                                fallbackUrls: ['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4']
-                            }
-                        ]
+                                videoUrl: normalizedVideoUrl,
+                                fallbackUrls: normalizedVideoUrl ? [normalizedVideoUrl] : [],
+                                firestoreVideoAsset
+                            }]
+                        }];
                     }
-                ];
-            }
-
-            creatorCustomMovies.unshift(newMediaItem);
-            localStorage.setItem('smartstream_public_creator_movies', JSON.stringify(creatorCustomMovies));
-
-            if (db) {
-                try {
-                    const pubRef = doc(db, "artifacts", appId, "public", "data", "smartstream_creator_movies", newMediaItem.id);
-                    await setDoc(pubRef, newMediaItem);
-                } catch (err) {
-                    console.warn("Firestore public publish error:", err);
-                    window.showToast('נשמר מקומית — בדוק חוקי אבטחה ב-Firestore לסנכרון מלא', 'error');
                 }
-            }
 
-            if (submitBtn) submitBtn.disabled = false;
-            if (progressBox) progressBox.classList.add('hidden');
-            e.target.reset();
-            window.closeCreatorUploadModal();
-            renderCatalog();
-            window.showToast(`"${title}" פורסם ציבורית בקטלוג SmartStream!`);
+                await setDoc(
+                    doc(db, "artifacts", appId, "public", "data", "smartstream_creator_movies", targetDocId),
+                    finalPayload
+                );
+
+                const existingIdx = creatorCustomMovies.findIndex(m => m.id === targetDocId);
+                if (existingIdx !== -1) creatorCustomMovies[existingIdx] = finalPayload;
+                else creatorCustomMovies.unshift(finalPayload);
+
+                localStorage.setItem('smartstream_public_creator_movies', JSON.stringify(creatorCustomMovies));
+                renderCatalog();
+
+                if (percentText) percentText.textContent = '100%';
+                if (progressBar) progressBar.style.width = '100%';
+                window.showToast('התוכן פורסם בהצלחה בקטלוג הציבורי של SmartStream!');
+                window.closeCreatorUploadModal();
+            } catch (err) {
+                console.error('Creator upload error:', err);
+                const msg = String(err?.message || err);
+                if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+                    syncFirebaseSetupBoxVisibility(true);
+                    window.showToast('שגיאת הרשאות Firestore — ודא שפרסמת את ה-Rules בקונסול ושהסיסמה מאומתת', 'error');
+                } else if (msg.includes('could not be read') || err?.name === 'NotReadableError') {
+                    window.showToast('הדפדפן נחסם מלקרוא את הקובץ מהדיסק — העתק את ה-MP4 לשולחן העבודה ובחר מחדש', 'error');
+                } else {
+                    window.showToast(`שגיאה בהעלאה: ${msg}`, 'error');
+                }
+            } finally {
+                if (submitBtn) submitBtn.disabled = false;
+                setTimeout(() => progressBox?.classList.add('hidden'), 1200);
+            }
         };
 
         window.openAdminDashboard = () => {
-            if (!window.isAdminCreator()) {
-                window.showToast('גישה למנהל המערכת בלבד', 'error');
-                return;
-            }
-            syncFirebaseSetupBoxVisibility(false);
+            if (!window.isAdminCreator()) return;
+            const all = getFullMoviesList();
             const totalEl = document.getElementById('adminTotalMoviesCount');
-            const creatorEl = document.getElementById('adminCreatorMoviesCount');
+            const customEl = document.getElementById('adminCreatorMoviesCount');
             const listEl = document.getElementById('adminCreatorMoviesList');
 
-            if (totalEl) totalEl.textContent = String(getFullMoviesList().length);
-            if (creatorEl) creatorEl.textContent = String(creatorCustomMovies.length);
+            if (totalEl) totalEl.textContent = String(all.length);
+            if (customEl) customEl.textContent = String(creatorCustomMovies.length);
 
             if (listEl) {
-                if (creatorCustomMovies.length === 0) {
-                    listEl.innerHTML = `<div class="text-xs text-gray-500 bg-zinc-950/80 border border-white/5 rounded-xl p-4 text-center">עדיין לא הועלו תכנים מותאמים אישית לענן.</div>`;
-                } else {
-                    listEl.innerHTML = creatorCustomMovies.map(item => `
+                listEl.innerHTML = creatorCustomMovies.length === 0
+                    ? `<div class="text-xs text-gray-500 bg-zinc-950/70 p-4 rounded-xl text-center">עדיין לא הועלו תכנים מותאמים אישית לענן.</div>`
+                    : creatorCustomMovies.map(m => `
                         <div class="flex items-center justify-between bg-zinc-950/90 border border-white/10 rounded-xl p-3">
-                            <div class="min-w-0 pl-3">
-                                <span class="text-xs font-extrabold text-white block truncate">${item.title}</span>
-                                <span class="text-[10px] text-gray-400">
-                                    ${item.isCreatorOriginal ? 'Smart Original' : (item.creatorName || 'יוצר חיצוני')} •
-                                    ${item.firestoreVideoAsset ? `Firestore (${item.firestoreVideoAsset.totalChunks} מקטעים)` : 'HTTPS Stream'}
-                                </span>
+                            <div class="min-w-0">
+                                <span class="text-xs font-extrabold text-white block truncate">${m.title}</span>
+                                <span class="text-[10px] text-gray-400">${m.isCreatorOriginal ? 'Smart Original' : m.creatorName} • ${m.duration}</span>
                             </div>
-                            <button type="button" onclick="window.deleteCreatorUploadedMovie('${item.id}')" class="bg-zinc-800 hover:bg-red-600 text-gray-300 hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition flex-shrink-0">
-                                הסר מהקטלוג
+                            <button type="button" onclick="window.deleteCreatorMovie('${m.id}')" class="bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white text-[11px] font-bold px-3 py-1.5 rounded-lg transition">
+                                מחק מהענן
                             </button>
                         </div>
                     `).join('');
-                }
             }
 
             document.getElementById('adminDashboardModal')?.classList.remove('hidden');
@@ -4241,82 +4401,105 @@ service cloud.firestore {
             document.getElementById('adminDashboardModal')?.classList.add('hidden');
         };
 
-        window.deleteCreatorUploadedMovie = async (movieId) => {
+        window.deleteCreatorMovie = async (movieId) => {
             if (!window.isAdminCreator()) return;
-            const target = creatorCustomMovies.find(m => m.id === movieId);
-            creatorCustomMovies = creatorCustomMovies.filter(m => m.id !== movieId);
-            localStorage.setItem('smartstream_public_creator_movies', JSON.stringify(creatorCustomMovies));
-
-            if (db) {
-                try {
+            try {
+                await ensureAdminFirebaseAuth();
+                const target = creatorCustomMovies.find(m => m.id === movieId);
+                if (db) {
                     await deleteDoc(doc(db, "artifacts", appId, "public", "data", "smartstream_creator_movies", movieId));
-                    if (target?.firestoreVideoAsset?.chunkIds) {
-                        await Promise.all(
-                            target.firestoreVideoAsset.chunkIds.map(cid =>
-                                deleteDoc(doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", cid)).catch(() => {})
-                            )
-                        );
+                    const chunkIds = target?.firestoreVideoAsset?.chunkIds || [];
+                    for (const cid of chunkIds) {
+                        deleteDoc(doc(db, "artifacts", appId, "public", "data", "smartstream_video_chunks", cid)).catch(() => {});
                     }
-                } catch (e) {}
+                }
+                creatorCustomMovies = creatorCustomMovies.filter(m => m.id !== movieId);
+                localStorage.setItem('smartstream_public_creator_movies', JSON.stringify(creatorCustomMovies));
+                renderCatalog();
+                window.openAdminDashboard();
+                window.showToast('התוכן הוסר מהקטלוג הציבורי');
+            } catch (err) {
+                window.showToast('שגיאה במחיקת התוכן מהענן', 'error');
             }
-
-            renderCatalog();
-            window.openAdminDashboard();
-            window.showToast('התוכן הוסר מהקטלוג הציבורי');
         };
 
         // =========================================================
-        // 13. Cinematic Intro Sequence & Bootstrapping
+        // 11. Toast Notifications & Cinematic Intro Sequence
         // =========================================================
-        let introStarted = false;
-        window.runIntroSequence = () => {
-            if (introStarted) return;
-            introStarted = true;
-            const overlay = document.getElementById('introOverlay');
-            const smart = document.getElementById('introSmart');
-            const stream = document.getElementById('introStream');
-            const wrapper = document.getElementById('introTextWrapper');
-            const symbol = document.getElementById('introLogoSymbol');
-            if (!overlay) return;
-
-            setTimeout(() => smart?.classList.add('animate-smart'), 250);
-            setTimeout(() => stream?.classList.add('animate-stream'), 950);
-            setTimeout(() => wrapper?.classList.add('animate-collapse'), 2000);
+        window.showToast = (message, type = 'success') => {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const isError = type === 'error';
+            toast.className = `pointer-events-auto px-4 py-3 rounded-2xl shadow-2xl border text-xs font-bold flex items-center gap-2.5 animate-fade-in backdrop-blur-xl ${
+                isError
+                    ? 'bg-red-950/95 border-red-500/60 text-red-100'
+                    : 'bg-zinc-900/95 border-emerald-500/40 text-white'
+            }`;
+            toast.innerHTML = `
+                <span class="w-2 h-2 rounded-full ${isError ? 'bg-red-500' : 'bg-emerald-400'}"></span>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
             setTimeout(() => {
-                if (wrapper) wrapper.style.display = 'none';
-                symbol?.classList.remove('hidden');
-                symbol?.classList.add('animate-logo-burst');
-                if (window.lucide) window.lucide.createIcons();
-            }, 2550);
-            setTimeout(() => {
-                symbol?.classList.remove('animate-logo-burst');
-                symbol?.classList.add('animate-logo-zoomout');
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 750);
-            }, 3550);
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 320);
+            }, 3600);
         };
 
+        let introTimers = [];
         window.skipIntro = () => {
+            introTimers.forEach(t => clearTimeout(t));
+            introTimers = [];
             const overlay = document.getElementById('introOverlay');
             if (overlay) {
                 overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 400);
+                overlay.style.pointerEvents = 'none';
+                setTimeout(() => overlay.classList.add('hidden'), 450);
             }
         };
 
-        window.addEventListener('load', () => {
-            if (window.lucide) window.lucide.createIcons();
-            loadLegalConsentStatus();
+        function runCinematicIntro() {
+            const smartEl = document.getElementById('introSmart');
+            const streamEl = document.getElementById('introStream');
+            const textWrap = document.getElementById('introTextWrapper');
+            const logoSym = document.getElementById('introLogoSymbol');
+
+            introTimers.push(setTimeout(() => smartEl?.classList.add('animate-smart'), 150));
+            introTimers.push(setTimeout(() => streamEl?.classList.add('animate-stream'), 500));
+            introTimers.push(setTimeout(() => textWrap?.classList.add('animate-collapse'), 1550));
+            introTimers.push(setTimeout(() => {
+                logoSym?.classList.remove('hidden');
+                logoSym?.classList.add('animate-logo-burst');
+            }, 1950));
+            introTimers.push(setTimeout(() => logoSym?.classList.add('animate-logo-zoomout'), 2850));
+            introTimers.push(setTimeout(() => window.skipIntro(), 3450));
+        }
+
+        // =========================================================
+        // 12. Bootstrap & Session Restoration
+        // =========================================================
+        (function bootstrapSmartStream() {
             try {
                 const savedSession = JSON.parse(localStorage.getItem('smartstream_active_local_session') || 'null');
                 if (savedSession && savedSession.email) {
                     currentUser = savedSession;
+                    onUserSignedInUI(currentUser);
                 }
             } catch (e) {}
-            onUserSignedInUI(currentUser);
+
+            updateNavbarProfileUI();
+            loadLegalConsentStatus();
+            bindVideoPlayerEvents();
+            renderCatalog();
             loadPublicCreatorCatalog();
-            window.runIntroSequence();
-        });
+            runCinematicIntro();
+
+            if (window.lucide) {
+                window.lucide.createIcons();
+            }
+        })();
     </script>
 </body>
 </html>
